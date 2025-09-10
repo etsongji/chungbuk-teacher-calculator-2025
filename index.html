@@ -21,12 +21,12 @@
                 <div class="input-section">
                     <div class="card">
                         <div class="card__header">
-                            <h2>기본 정보 입력</h2>
+                            <h2>현임교 정보</h2>
                         </div>
                         <div class="card__body">
                             <div class="form-group">
-                                <label for="region-select" class="form-label">근무지역 선택</label>
-                                <select id="region-select" class="form-control" required>
+                                <label for="current-region-select" class="form-label">현재 근무지역</label>
+                                <select id="current-region-select" class="form-control" required>
                                     <option value="">지역을 선택해주세요</option>
                                     <option value="chungju">충주시 (통산 15년)</option>
                                     <option value="jecheon">제천시 (통산 15년)</option>
@@ -35,9 +35,9 @@
                                 </select>
                             </div>
                             
-                            <div class="form-group" id="cheongju-sub-region" style="display: none;">
-                                <label for="cheongju-type" class="form-label">청주시 세부지역</label>
-                                <select id="cheongju-type" class="form-control">
+                            <div class="form-group" id="current-cheongju-sub-region" style="display: none;">
+                                <label for="current-cheongju-type" class="form-label">청주시 세부지역</label>
+                                <select id="current-cheongju-type" class="form-control">
                                     <option value="dong">동지역</option>
                                     <option value="eup_myeon">읍·면지역</option>
                                 </select>
@@ -45,8 +45,25 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="transfer-date" class="form-label">현 학교 전입일자</label>
-                                <input type="date" id="transfer-date" class="form-control" required>
+                                <label for="current-transfer-date" class="form-label">현 학교 전입일자</label>
+                                <input type="date" id="current-transfer-date" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card__header">
+                            <h2>전임교 경력</h2>
+                            <button type="button" class="btn btn--primary btn--sm" id="add-previous-school-btn">
+                                전임교 경력 추가
+                            </button>
+                        </div>
+                        <div class="card__body">
+                            <div class="regulation-note">
+                                <strong>지역만기 계산:</strong> 전임교와 현임교 경력을 지역별로 합산하여 계산합니다.
+                            </div>
+                            <div id="previous-schools-list" class="previous-schools-list">
+                                <p class="text-secondary">추가된 전임교 경력이 없습니다.</p>
                             </div>
                         </div>
                     </div>
@@ -80,33 +97,38 @@
                         <div class="card__body">
                             <div class="region-info" id="region-info" style="display: none;">
                                 <div class="info-item">
-                                    <span class="label">선택 지역:</span>
+                                    <span class="label">현재 근무지역:</span>
                                     <span class="value" id="selected-region-text">-</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="label">지역만기:</span>
+                                    <span class="label">지역만기 기준:</span>
                                     <span class="value" id="regional-limit-text">-</span>
                                 </div>
                             </div>
 
+                            <div class="service-summary" id="service-summary" style="display: none;">
+                                <h3>근무기간 요약</h3>
+                                <div id="regional-service-summary"></div>
+                            </div>
+
                             <div class="result-grid">
                                 <div class="result-item">
-                                    <div class="result-label">현재 재직기간</div>
+                                    <div class="result-label">현임교 근무기간</div>
                                     <div class="result-value" id="current-service">-</div>
                                 </div>
                                 <div class="result-item">
-                                    <div class="result-label">유효 근무기간</div>
-                                    <div class="result-value" id="effective-service">-</div>
+                                    <div class="result-label">해당 지역 총 근무기간</div>
+                                    <div class="result-value" id="total-regional-service">-</div>
                                 </div>
                                 <div class="result-item highlight">
                                     <div class="result-label">학교 만기일</div>
                                     <div class="result-value" id="school-expiry">-</div>
-                                    <div class="result-note" id="school-remaining">5년 기준</div>
+                                    <div class="result-note" id="school-remaining">현임교 5년 기준</div>
                                 </div>
                                 <div class="result-item highlight">
                                     <div class="result-label">지역 만기일</div>
                                     <div class="result-value" id="regional-expiry">-</div>
-                                    <div class="result-note" id="regional-remaining">지역별 차등</div>
+                                    <div class="result-note" id="regional-remaining">전체 경력 기준</div>
                                 </div>
                             </div>
 
@@ -172,6 +194,53 @@
         </main>
     </div>
 
+    <!-- 전임교 경력 추가 모달 -->
+    <div class="modal hidden" id="previous-school-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>전임교 경력 추가</h3>
+                <button type="button" class="modal-close" id="school-modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="previous-school-form">
+                    <div class="form-group">
+                        <label for="school-name" class="form-label">학교명 (선택사항)</label>
+                        <input type="text" id="school-name" class="form-control" placeholder="예: ○○중학교">
+                    </div>
+                    <div class="form-group">
+                        <label for="school-region" class="form-label">근무지역</label>
+                        <select id="school-region" class="form-control" required>
+                            <option value="">지역을 선택해주세요</option>
+                            <option value="chungju">충주시</option>
+                            <option value="jecheon">제천시</option>
+                            <option value="cheongju">청주시</option>
+                            <option value="other">기타지역</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="school-cheongju-sub-region" style="display: none;">
+                        <label for="school-cheongju-type" class="form-label">청주시 세부지역</label>
+                        <select id="school-cheongju-type" class="form-control">
+                            <option value="dong">동지역</option>
+                            <option value="eup_myeon">읍·면지역</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="school-start-date" class="form-label">근무 시작일</label>
+                        <input type="date" id="school-start-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="school-end-date" class="form-label">근무 종료일</label>
+                        <input type="date" id="school-end-date" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--secondary" id="school-modal-cancel-btn">취소</button>
+                <button type="button" class="btn btn--primary" id="school-modal-save-btn">추가</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 휴직 정보 추가 모달 -->
     <div class="modal hidden" id="leave-modal">
         <div class="modal-content">
@@ -181,6 +250,14 @@
             </div>
             <div class="modal-body">
                 <form id="leave-form">
+                    <div class="form-group">
+                        <label for="leave-school" class="form-label">해당 학교</label>
+                        <select id="leave-school" class="form-control" required>
+                            <option value="">선택해주세요</option>
+                            <option value="current">현임교</option>
+                        </select>
+                        <small class="form-help">휴직이 발생한 학교를 선택해주세요</small>
+                    </div>
                     <div class="form-group">
                         <label for="leave-type" class="form-label">휴직 유형</label>
                         <select id="leave-type" class="form-control" required>
