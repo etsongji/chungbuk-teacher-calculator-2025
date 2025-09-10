@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>충청북도교육청 교사 만기 계산기 (2025년 개정)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>충청북도교육청 교사 만기 계산기</h1>
+            <p>중등교육공무원 인사관리기준 (2025.7.2. 개정, 2026.3.1. 시행)</p>
+            <div class="regulation-badge">
+                <span class="badge badge--primary">최신 규정 반영</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="calculator-section">
+                <div class="input-section">
+                    <div class="card">
+                        <div class="card__header">
+                            <h2>기본 정보 입력</h2>
+                        </div>
+                        <div class="card__body">
+                            <div class="form-group">
+                                <label for="region-select" class="form-label">근무지역 선택</label>
+                                <select id="region-select" class="form-control" required>
+                                    <option value="">지역을 선택해주세요</option>
+                                    <option value="chungju">충주시 (통산 15년)</option>
+                                    <option value="jecheon">제천시 (통산 15년)</option>
+                                    <option value="cheongju">청주시 (통산 13년)</option>
+                                    <option value="other">기타지역 (통산 8년)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" id="cheongju-sub-region" style="display: none;">
+                                <label for="cheongju-type" class="form-label">청주시 세부지역</label>
+                                <select id="cheongju-type" class="form-control">
+                                    <option value="dong">동지역</option>
+                                    <option value="eup_myeon">읍·면지역</option>
+                                </select>
+                                <small class="form-help">동지역 ↔ 읍면지역 전보시 별도 기준 적용</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="transfer-date" class="form-label">현 학교 전입일자</label>
+                                <input type="date" id="transfer-date" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card__header">
+                            <h2>휴직 정보</h2>
+                            <button type="button" class="btn btn--primary btn--sm" id="add-leave-btn">
+                                휴직 정보 추가
+                            </button>
+                        </div>
+                        <div class="card__body">
+                            <div class="regulation-note">
+                                <strong>2025년 개정 규정:</strong> 휴직 유형별 재직기간 산입 기준이 변경되었습니다.
+                            </div>
+                            <div id="leave-list" class="leave-list">
+                                <p class="text-secondary">추가된 휴직 정보가 없습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="card">
+                        <div class="card__header">
+                            <h2>계산 결과</h2>
+                            <button type="button" class="btn btn--outline btn--sm" onclick="window.print()">
+                                인쇄하기
+                            </button>
+                        </div>
+                        <div class="card__body">
+                            <div class="region-info" id="region-info" style="display: none;">
+                                <div class="info-item">
+                                    <span class="label">선택 지역:</span>
+                                    <span class="value" id="selected-region-text">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">지역만기:</span>
+                                    <span class="value" id="regional-limit-text">-</span>
+                                </div>
+                            </div>
+
+                            <div class="result-grid">
+                                <div class="result-item">
+                                    <div class="result-label">현재 재직기간</div>
+                                    <div class="result-value" id="current-service">-</div>
+                                </div>
+                                <div class="result-item">
+                                    <div class="result-label">유효 근무기간</div>
+                                    <div class="result-value" id="effective-service">-</div>
+                                </div>
+                                <div class="result-item highlight">
+                                    <div class="result-label">학교 만기일</div>
+                                    <div class="result-value" id="school-expiry">-</div>
+                                    <div class="result-note" id="school-remaining">5년 기준</div>
+                                </div>
+                                <div class="result-item highlight">
+                                    <div class="result-label">지역 만기일</div>
+                                    <div class="result-value" id="regional-expiry">-</div>
+                                    <div class="result-note" id="regional-remaining">지역별 차등</div>
+                                </div>
+                            </div>
+
+                            <div class="leave-summary" id="leave-summary" style="display: none;">
+                                <h3>휴직 처리 내역</h3>
+                                <div id="leave-summary-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="regulations-section">
+                <div class="card">
+                    <div class="card__header">
+                        <h2>2025년 개정 인사관리기준</h2>
+                    </div>
+                    <div class="card__body">
+                        <div class="regulations-grid">
+                            <div class="regulation-item">
+                                <h3>제12조 (정기전보)</h3>
+                                <p><strong>학교만기 5년:</strong> 수석교사·교사의 정기전보는 현임교 근무 2년 이상 5년 범위에서 실시</p>
+                            </div>
+                            <div class="regulation-item">
+                                <h3>제11조 (전보의 제한)</h3>
+                                <ul>
+                                    <li><strong>충주시:</strong> 통산 15년 (기존 8년에서 변경)</li>
+                                    <li><strong>제천시:</strong> 통산 15년</li>
+                                    <li><strong>청주시:</strong> 통산 13년 (동/읍면지역 구분)</li>
+                                    <li><strong>기타지역:</strong> 통산 8년</li>
+                                </ul>
+                            </div>
+                            <div class="regulation-item">
+                                <h3>제14조 (휴직기간 처리)</h3>
+                                <ul>
+                                    <li><strong>원칙:</strong> 파견 및 휴직은 근무기간 불인정</li>
+                                    <li><strong>예외:</strong> 육아휴직, 노조전임자</li>
+                                    <li><strong>지역내 파견:</strong> 동일지역 행정기관 파견시 인정</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="legal-references">
+                            <h3>최신 규정 조문</h3>
+                            <div class="reference-list">
+                                <div class="reference-item">
+                                    <h4>제11조제2항 (지역별 근무연한)</h4>
+                                    <p>"충주시 근무기간 통산 15년, 제천시 근무기간 통산 15년으로 한다. 단, 지역 근무연한 만료임에도 불구하고 충주, 제천, 영동, 단양지역에서 최근 7년 이상 실거주한 자는 예외로 할 수 있다."</p>
+                                </div>
+                                <div class="reference-item">
+                                    <h4>제14조제1항 (휴직기간 처리)</h4>
+                                    <p>"파견 및 휴직은 근무기간, 경력점, 가산점, 실적점 부여를 인정하지 않음. 단, 육아휴직, 노조전임자는 근무기간을 인정할 수 있으며, 소속교와 동일 지역 내 행정기관 파견은 근무기간을 인정함"</p>
+                                </div>
+                                <div class="reference-item">
+                                    <h4>개정 시행일</h4>
+                                    <p>이 기준은 2025년 7월 2일 개정되어 2026년 3월 1일부터 시행됩니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 휴직 정보 추가 모달 -->
+    <div class="modal hidden" id="leave-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>휴직 정보 추가</h3>
+                <button type="button" class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="leave-form">
+                    <div class="form-group">
+                        <label for="leave-type" class="form-label">휴직 유형</label>
+                        <select id="leave-type" class="form-control" required>
+                            <option value="">선택해주세요</option>
+                            <option value="sick">질병휴직 (재직기간 제외)</option>
+                            <option value="parental">육아휴직 (재직기간 인정)</option>
+                            <option value="study">유학휴직 (재직기간 제외)</option>
+                            <option value="military">병역휴직 (재직기간 제외)</option>
+                            <option value="family_care">가족돌봄휴직 (재직기간 제외)</option>
+                            <option value="union_official">노조전임자 (재직기간 인정)</option>
+                            <option value="local_dispatch">지역내 행정기관 파견 (재직기간 인정)</option>
+                            <option value="other_dispatch">기타 파견 (재직기간 제외)</option>
+                            <option value="other">기타휴직 (재직기간 제외)</option>
+                        </select>
+                        <small class="form-help">2025년 개정 규정에 따른 재직기간 산입 기준</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="leave-start" class="form-label">시작일</label>
+                        <input type="date" id="leave-start" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="leave-end" class="form-label">종료일</label>
+                        <input type="date" id="leave-end" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--secondary" id="modal-cancel-btn">취소</button>
+                <button type="button" class="btn btn--primary" id="modal-save-btn">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
