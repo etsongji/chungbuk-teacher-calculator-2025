@@ -25,7 +25,7 @@ const regionalSettings = {
 // 휴직 유형 설정 (2025년 개정 규정)
 const leaveTypes = {
     'sick': { label: '질병휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
-    'parental': { label: '육아휴직', includedInService: true, description: '년단위(1년,2년 등): 학교만기에서 제외, 개월단위: 재직기간 포함' },
+    'parental': { label: '육아휴직', includedInService: true, description: '재직기간으로 인정 (최신 규정 예외조항)' },
     'study': { label: '유학휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
     'military': { label: '병역휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
     'family_care': { label: '가족돌봄휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
@@ -720,13 +720,13 @@ function calculateAndDisplayExpiryDates() {
     const schoolTermDays = regionData.schoolTerm * 365; // 5년
     const regionalTermDays = regionData.regionalTerm * 365; // 지역별 차등
 
-    // 휴직 제외 기간 계산 (수정된 부분)
-    const { excludedDays, schoolExcludedDays } = calculateEffectiveService();
+    // 휴직 제외 기간 계산
+    const { excludedDays } = calculateEffectiveService();
 
-    // 학교 만기일 (현임교 기준) - schoolExcludedDays 사용 (년단위 육아휴직 포함 제외)
-    const schoolExpiryDate = new Date(currentTransferDate.getTime() + (schoolTermDays + schoolExcludedDays) * 24 * 60 * 60 * 1000);
+    // 학교 만기일 (현임교 기준)
+    const schoolExpiryDate = new Date(currentTransferDate.getTime() + (schoolTermDays + excludedDays) * 24 * 60 * 60 * 1000);
 
-    // 지역 만기일 (전체 지역 경력 기준) - excludedDays 사용 (년단위 육아휴직 제외하지 않음)
+    // 지역 만기일 (전체 지역 경력 기준) - 첫 전입일 기준으로 계산
     const firstRegionalEntryDate = getFirstRegionalEntryDate();
     const regionalExpiryDate = new Date(firstRegionalEntryDate.getTime() + (regionalTermDays + excludedDays) * 24 * 60 * 60 * 1000);
 
@@ -743,19 +743,11 @@ function calculateAndDisplayExpiryDates() {
         schoolRemainingEl.textContent = schoolRemaining.totalDays > 0 ? 
             `${formatServicePeriod(schoolRemaining)} 남음` : '만료됨';
     }
-
+    
     if (regionalRemainingEl) {
         regionalRemainingEl.textContent = regionalRemaining.totalDays > 0 ? 
             `${formatServicePeriod(regionalRemaining)} 남음` : '만료됨';
     }
-
-    // 디버깅용 콘솔 출력
-    console.log('만기 계산 결과:', {
-        학교만기: formatDate(schoolExpiryDate),
-        지역만기: formatDate(regionalExpiryDate),
-        학교제외일수: schoolExcludedDays,
-        지역제외일수: excludedDays
-    });
 }
 
 function getFirstRegionalEntryDate() {
@@ -775,76 +767,78 @@ function getFirstRegionalEntryDate() {
 
 function calculateEffectiveService() {
     let excludedDays = 0;
-    let schoolExcludedDays = 0; // 학교 만기 계산에서만 제외되는 일수
 
     leaves.forEach(leave => {
         const leaveDays = leave.duration.totalDays;
         const leaveTypeData = leaveTypes[leave.type];
-
+        
         // 2025년 개정 규정에 따른 처리
         if (!leaveTypeData.includedInService) {
             // 재직기간에서 제외되는 휴직
             excludedDays += leaveDays;
-            schoolExcludedDays += leaveDays;
-        } else if (leave.type === 'parental') {
-            // 육아휴직 특별 처리
-            if (isParentalLeaveYearBased(leave.duration)) {
-                // 년 단위 육아휴직: 학교 만기에서만 제외, 지역 만기에는 포함
-                schoolExcludedDays += leaveDays;
-                console.log(`년 단위 육아휴직 ${formatServicePeriod(leave.duration)} - 학교 만기에서 제외`);
-            } else {
-                // 개월 단위 육아휴직: 모든 재직기간에 포함
-                console.log(`개월 단위 육아휴직 ${formatServicePeriod(leave.duration)} - 재직기간에 포함`);
-            }
         }
     });
 
-    return { 
-        excludedDays, // 지역 만기 계산용 (일반 휴직만 제외)
-        schoolExcludedDays // 학교 만기 계산용 (일반 휴직 + 년단위 육아휴직 제외)
-    };
-}
-
-// 육아휴직이 년 단위인지 확인하는 헬퍼 함수
-function isParentalLeaveYearBased(duration) {
-    const totalDays = duration.totalDays;
-    const years = duration.years;
-    const months = duration.months;
-    const days = duration.days;
-
-    // 정확한 년 단위인 경우 (1년, 2년, 3년 등)
-    // 1. 년수가 1 이상이고, 월과 일이 모두 0인 경우
-    if (years >= 1 && months === 0 && days === 0) {
-        return true;
-    }
-
-    // 2. 총 일수가 365일의 배수에 가까운 경우 (±15일 오차 허용)
-    for (let year = 1; year <= 5; year++) {
-        const expectedDays = year * 365;
-        if (Math.abs(totalDays - expectedDays) <= 15) {
-            return true;
-        }
-    }
-
-    return false;
+    return { excludedDays };
 }
 
 function calculateServicePeriod(startDate, endDate) {
-    const diffTime = endDate - startDate;
-    const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (totalDays < 0) {
+    if (endDate <= startDate) {
         return { years: 0, months: 0, days: 0, totalDays: 0 };
     }
 
-    return convertDaysToServicePeriod(totalDays);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // 총 일수 (양끝 포함)
+    const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    // 년/월/일 기본 계산
+    let years = end.getFullYear() - start.getFullYear();
+    let months = end.getMonth() - start.getMonth();
+    let days = end.getDate() - start.getDate() + 1;
+
+    // 일수가 0 이하면 조정
+    if (days <= 0) {
+        months--;
+        const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+
+    // 월수가 음수면 조정
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+
+    // 교육행정 관례: 12개월은 1년으로 처리
+    if (months >= 12) {
+        years += Math.floor(months / 12);
+        months = months % 12;
+    }
+
+    // 실무 관례: 11개월 25일 이상이면 만년으로 올림 처리 (선택적)
+    // if (months === 11 && days >= 25) {
+    //     years++;
+    //     months = 0;
+    //     days = 0;
+    // }
+
+    return { years, months, days, totalDays };
 }
 
 function convertDaysToServicePeriod(totalDays) {
+    if (totalDays <= 0) {
+        return { years: 0, months: 0, days: 0, totalDays: 0 };
+    }
+
+    // 더 정확한 계산을 위해 평년 기준으로 계산
     const years = Math.floor(totalDays / 365);
-    const remainingDays = totalDays % 365;
+    let remainingDays = totalDays - (years * 365);
+
+    // 월 계산 (평균 30.44일/월이 아닌 실제 30일 기준)
     const months = Math.floor(remainingDays / 30);
-    const days = remainingDays % 30;
+    const days = remainingDays - (months * 30);
 
     return { years, months, days, totalDays };
 }
@@ -930,9 +924,19 @@ function formatDuration(duration) {
 
 function formatServicePeriod(period) {
     const parts = [];
-    if (period.years > 0) parts.push(`${period.years}년`);
-    if (period.months > 0) parts.push(`${period.months}개월`);
-    if (period.days > 0) parts.push(`${period.days}일`);
+
+    // 12개월은 1년으로 자동 변환
+    let { years, months, days } = period;
+
+    if (months >= 12) {
+        years += Math.floor(months / 12);
+        months = months % 12;
+    }
+
+    if (years > 0) parts.push(`${years}년`);
+    if (months > 0) parts.push(`${months}개월`);
+    if (days > 0 && years === 0) parts.push(`${days}일`); // 년이 있으면 일은 생략
+
     return parts.join(' ') || '0일';
 }
 
