@@ -25,7 +25,7 @@ const regionalSettings = {
 // 휴직 유형 설정 (2025년 개정 규정)
 const leaveTypes = {
     'sick': { label: '질병휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
-    'parental': { label: '육아휴직', includedInService: true, description: '재직기간으로 인정 (최신 규정 예외조항)' },
+    'parental': { label: '육아휴직', includedInService: true, description: '년단위(1년,2년 등): 학교만기에서 제외, 개월단위: 재직기간 포함' },
     'study': { label: '유학휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
     'military': { label: '병역휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
     'family_care': { label: '가족돌봄휴직', includedInService: false, description: '일반 휴직으로 재직기간에서 제외' },
@@ -720,13 +720,13 @@ function calculateAndDisplayExpiryDates() {
     const schoolTermDays = regionData.schoolTerm * 365; // 5년
     const regionalTermDays = regionData.regionalTerm * 365; // 지역별 차등
 
-    // 휴직 제외 기간 계산
-    const { excludedDays } = calculateEffectiveService();
+    // 휴직 제외 기간 계산 (수정된 부분)
+    const { excludedDays, schoolExcludedDays } = calculateEffectiveService();
 
-    // 학교 만기일 (현임교 기준)
-    const schoolExpiryDate = new Date(currentTransferDate.getTime() + (schoolTermDays + excludedDays) * 24 * 60 * 60 * 1000);
+    // 학교 만기일 (현임교 기준) - schoolExcludedDays 사용 (년단위 육아휴직 포함 제외)
+    const schoolExpiryDate = new Date(currentTransferDate.getTime() + (schoolTermDays + schoolExcludedDays) * 24 * 60 * 60 * 1000);
 
-    // 지역 만기일 (전체 지역 경력 기준) - 첫 전입일 기준으로 계산
+    // 지역 만기일 (전체 지역 경력 기준) - excludedDays 사용 (년단위 육아휴직 제외하지 않음)
     const firstRegionalEntryDate = getFirstRegionalEntryDate();
     const regionalExpiryDate = new Date(firstRegionalEntryDate.getTime() + (regionalTermDays + excludedDays) * 24 * 60 * 60 * 1000);
 
@@ -743,11 +743,19 @@ function calculateAndDisplayExpiryDates() {
         schoolRemainingEl.textContent = schoolRemaining.totalDays > 0 ? 
             `${formatServicePeriod(schoolRemaining)} 남음` : '만료됨';
     }
-    
+
     if (regionalRemainingEl) {
         regionalRemainingEl.textContent = regionalRemaining.totalDays > 0 ? 
             `${formatServicePeriod(regionalRemaining)} 남음` : '만료됨';
     }
+
+    // 디버깅용 콘솔 출력
+    console.log('만기 계산 결과:', {
+        학교만기: formatDate(schoolExpiryDate),
+        지역만기: formatDate(regionalExpiryDate),
+        학교제외일수: schoolExcludedDays,
+        지역제외일수: excludedDays
+    });
 }
 
 function getFirstRegionalEntryDate() {
@@ -767,19 +775,58 @@ function getFirstRegionalEntryDate() {
 
 function calculateEffectiveService() {
     let excludedDays = 0;
+    let schoolExcludedDays = 0; // 학교 만기 계산에서만 제외되는 일수
 
     leaves.forEach(leave => {
         const leaveDays = leave.duration.totalDays;
         const leaveTypeData = leaveTypes[leave.type];
-        
+
         // 2025년 개정 규정에 따른 처리
         if (!leaveTypeData.includedInService) {
             // 재직기간에서 제외되는 휴직
             excludedDays += leaveDays;
+            schoolExcludedDays += leaveDays;
+        } else if (leave.type === 'parental') {
+            // 육아휴직 특별 처리
+            if (isParentalLeaveYearBased(leave.duration)) {
+                // 년 단위 육아휴직: 학교 만기에서만 제외, 지역 만기에는 포함
+                schoolExcludedDays += leaveDays;
+                console.log(`년 단위 육아휴직 ${formatServicePeriod(leave.duration)} - 학교 만기에서 제외`);
+            } else {
+                // 개월 단위 육아휴직: 모든 재직기간에 포함
+                console.log(`개월 단위 육아휴직 ${formatServicePeriod(leave.duration)} - 재직기간에 포함`);
+            }
         }
     });
 
-    return { excludedDays };
+    return { 
+        excludedDays, // 지역 만기 계산용 (일반 휴직만 제외)
+        schoolExcludedDays // 학교 만기 계산용 (일반 휴직 + 년단위 육아휴직 제외)
+    };
+}
+
+// 육아휴직이 년 단위인지 확인하는 헬퍼 함수
+function isParentalLeaveYearBased(duration) {
+    const totalDays = duration.totalDays;
+    const years = duration.years;
+    const months = duration.months;
+    const days = duration.days;
+
+    // 정확한 년 단위인 경우 (1년, 2년, 3년 등)
+    // 1. 년수가 1 이상이고, 월과 일이 모두 0인 경우
+    if (years >= 1 && months === 0 && days === 0) {
+        return true;
+    }
+
+    // 2. 총 일수가 365일의 배수에 가까운 경우 (±15일 오차 허용)
+    for (let year = 1; year <= 5; year++) {
+        const expectedDays = year * 365;
+        if (Math.abs(totalDays - expectedDays) <= 15) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function calculateServicePeriod(startDate, endDate) {
