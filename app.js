@@ -1,4 +1,4 @@
-// 충북 교사 전보 만기계산기 - 휴직 인식 문제 완전 해결
+// 충북 교사 전보 만기계산기 - 만기계산 오류 완전 해결
 // 2025년 개정 인사관리기준 적용
 
 class CareerCalculator {
@@ -65,7 +65,7 @@ class CareerCalculator {
     }
 
     init() {
-        console.log('🚀 휴직 인식 개선된 경력계산기 시작');
+        console.log('수정된 경력계산기 시작 - 만기계산 오류 해결');
         this.setupEventListeners();
         this.updateUI();
     }
@@ -200,9 +200,9 @@ class CareerCalculator {
         this.calculateExpiry();
     }
 
-    // 🔥 완전히 수정된 파싱 엔진 - 탭 구분 데이터 처리 개선
+    // 완전히 수정된 파싱 엔진 - 탭 구분 데이터 처리
     parseCareerData(textData) {
-        console.log('🔥 휴직 인식 완전 개선된 파싱 엔진 시작');
+        console.log('휴직 인식 개선된 파싱 엔진 시작');
         console.log('입력 데이터 길이:', textData.length);
 
         const lines = textData.trim().split('\n').filter(line => line.trim());
@@ -215,17 +215,16 @@ class CareerCalculator {
 
         // 각 라인을 개별 레코드로 처리 (탭 구분)
         lines.forEach((line, lineIndex) => {
-            console.log(`\n📋 === 라인 ${lineIndex + 1} 분석 ===`);
+            console.log(`\n라인 ${lineIndex + 1} 분석:`);
             console.log(`원본: "${line}"`);
 
             try {
                 // 탭으로 분할
                 const columns = line.split('\t').map(col => col.trim());
                 console.log(`컬럼 수: ${columns.length}`);
-                console.log('컬럼들:', columns);
 
                 if (columns.length < 3) {
-                    console.log('  ⚠️ 컬럼 부족 - 건너뛰기');
+                    console.log('  컬럼 부족 - 건너뛰기');
                     skipped.push({
                         reason: '데이터 형식 오류 (컬럼 부족)',
                         line: line,
@@ -242,24 +241,21 @@ class CareerCalculator {
 
                 console.log(`  [0] 기간: "${period}"`);
                 console.log(`  [1] 임용구분: "${appointmentType}"`);
-                console.log(`  [2] 직급: "${position}"`);
-                console.log(`  [3] 부서: "${department}"`);
-                console.log(`  [4] 발령: "${assignment}"`);
 
                 // 날짜 파싱
                 const { startDate, endDate, totalDays } = this.parseDateRange(period);
                 
                 if (!startDate || !endDate || totalDays <= 0) {
-                    console.error('  ❌ 날짜 파싱 실패');
+                    console.error('  날짜 파싱 실패');
                     errors.push(`라인 ${lineIndex + 1}: 날짜 파싱 실패 - ${period}`);
                     return;
                 }
 
-                console.log(`  📅 기간: ${this.formatDate(startDate)} ~ ${this.formatDate(endDate)} (${totalDays}일)`);
+                console.log(`  기간: ${this.formatDate(startDate)} ~ ${this.formatDate(endDate)} (${totalDays}일)`);
 
                 // 의미없는 기간 제외 (1일 이하)
                 if (totalDays <= 1) {
-                    console.log('  ⭐️ 제외: 무의미한 기간 (1일 이하)');
+                    console.log('  제외: 무의미한 기간 (1일 이하)');
                     skipped.push({
                         reason: '무의미한 기간 (1일 이하)',
                         appointmentType,
@@ -270,8 +266,8 @@ class CareerCalculator {
                     return;
                 }
 
-                // 🎯 핵심: 휴직 여부 판단
-                console.log('  🔍 분류 판단 시작...');
+                // 분류 판단
+                console.log('  분류 판단 시작...');
                 const isSkipRecord = this.isSkipRecord(appointmentType);
                 const isLeave = this.isLeaveRecord(appointmentType);
 
@@ -281,7 +277,7 @@ class CareerCalculator {
                 if (isSkipRecord) {
                     // 휴직복직, 전보 등 제외
                     const reason = this.getSkipReason(appointmentType);
-                    console.log(`  ⭐️ 최종 결정: 제외 (${reason})`);
+                    console.log(`  최종 결정: 제외 (${reason})`);
                     skipped.push({
                         reason,
                         appointmentType,
@@ -294,8 +290,8 @@ class CareerCalculator {
                     const leaveType = this.detectLeaveType(appointmentType);
                     const isOneYearOrMore = totalDays >= 365;
 
-                    console.log(`  🟡 최종 결정: 휴직 - ${this.leaveTypes[leaveType].label}`);
-                    console.log(`  📊 휴직 상세: ${totalDays}일, ${isOneYearOrMore ? '1년이상' : '1년미만'}`);
+                    console.log(`  최종 결정: 휴직 - ${this.leaveTypes[leaveType].label}`);
+                    console.log(`  휴직 상세: ${totalDays}일, ${isOneYearOrMore ? '1년이상' : '1년미만'}`);
 
                     leaves.push({
                         type: leaveType,
@@ -313,7 +309,7 @@ class CareerCalculator {
                     const region = this.detectRegion((department || '') + ' ' + (assignment || ''));
                     const schoolName = this.extractSchoolName(assignment || department || '미상');
 
-                    console.log(`  ✅ 최종 결정: 일반근무 - ${schoolName} (${this.regionalSettings[region].name})`);
+                    console.log(`  최종 결정: 일반근무 - ${schoolName} (${this.regionalSettings[region].name})`);
 
                     schools.push({
                         name: schoolName,
@@ -330,7 +326,7 @@ class CareerCalculator {
                 }
 
             } catch (error) {
-                console.error(`  ❌ 라인 ${lineIndex + 1} 파싱 오류:`, error);
+                console.error(`  라인 ${lineIndex + 1} 파싱 오류:`, error);
                 errors.push(`라인 ${lineIndex + 1}: 파싱 오류 - ${error.message}`);
             }
         });
@@ -349,21 +345,15 @@ class CareerCalculator {
             }
         };
 
-        console.log('\n🎯 === 최종 파싱 결과 ===');
+        console.log('\n최종 파싱 결과:');
         console.log('요약:', result.summary);
-        console.log('일반근무 목록:');
-        schools.forEach((s, i) => console.log(`  ${i+1}. ${s.name} (${s.totalDays}일)`));
-        console.log('휴직 목록:');
-        leaves.forEach((l, i) => console.log(`  ${i+1}. ${this.leaveTypes[l.type].label} (${l.totalDays}일, ${l.appointmentType})`));
-        console.log('제외 목록:');
-        skipped.forEach((s, i) => console.log(`  ${i+1}. ${s.reason} (${s.appointmentType})`));
 
         return result;
     }
 
-    // 날짜 범위 파싱 개선
+    // 날짜 범위 파싱
     parseDateRange(period) {
-        console.log(`    📅 날짜 파싱: "${period}"`);
+        console.log(`    날짜 파싱: "${period}"`);
         
         // 정규표현식 패턴들
         const patterns = [
@@ -399,7 +389,7 @@ class CareerCalculator {
                     parseInt(match[5]) - 1,
                     parseInt(match[6])
                 );
-                console.log('    ✅ 완전한 기간 파싱 성공');
+                console.log('    완전한 기간 파싱 성공');
                 break;
             }
         }
@@ -415,14 +405,14 @@ class CareerCalculator {
                         parseInt(match[3])
                     );
                     endDate = new Date(); // 현재
-                    console.log('    ✅ 진행중 기간 파싱 성공');
+                    console.log('    진행중 기간 파싱 성공');
                     break;
                 }
             }
         }
 
         if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-            console.error('    ❌ 날짜 파싱 실패');
+            console.error('    날짜 파싱 실패');
             return { startDate: null, endDate: null, totalDays: 0 };
         }
 
@@ -431,9 +421,9 @@ class CareerCalculator {
         return { startDate, endDate, totalDays };
     }
 
-    // 🎯 완전히 개선된 휴직 여부 판단
+    // 휴직 여부 판단
     isLeaveRecord(appointmentType) {
-        console.log(`    🔍 휴직 여부 검사: "${appointmentType}"`);
+        console.log(`    휴직 여부 검사: "${appointmentType}"`);
 
         // 1단계: 휴직복직은 절대 휴직이 아님
         if (appointmentType.includes('휴직복직')) {
@@ -450,25 +440,15 @@ class CareerCalculator {
             }
         }
 
-        // 3단계: 휴직 키워드 검사 (더 포괄적)
+        // 3단계: 휴직 키워드 검사
         const leaveKeywords = [
-            '휴직',           // 일반적인 휴직
-            '육아휴직',       // 육아휴직
-            '7호:육아휴직',   // 구체적인 육아휴직  
-            '7호:육아',       // 7호 육아
-            '질병휴직',       // 질병휴직
-            '유학휴직',       // 유학휴직
-            '병역휴직',       // 병역휴직
-            '가족돌봄휴직',   // 가족돌봄휴직
-            '휴직연장',       // 휴직연장
-            '노조전임',       // 노조전임자
-            '연수휴직'        // 연수휴직
+            '휴직', '육아휴직', '7호:육아휴직', '7호:육아', '질병휴직', 
+            '유학휴직', '병역휴직', '가족돌봄휴직', '휴직연장', '노조전임', '연수휴직'
         ];
 
-        // 키워드 하나씩 체크
         for (const keyword of leaveKeywords) {
             if (appointmentType.includes(keyword)) {
-                console.log(`    ✅ 휴직 키워드 매칭: "${keyword}" - 휴직으로 분류`);
+                console.log(`    휴직 키워드 매칭: "${keyword}" - 휴직으로 분류`);
                 return true;
             }
         }
@@ -504,7 +484,7 @@ class CareerCalculator {
 
     // 휴직 유형 감지
     detectLeaveType(appointmentType) {
-        console.log(`    🔍 휴직 유형 감지: "${appointmentType}"`);
+        console.log(`    휴직 유형 감지: "${appointmentType}"`);
 
         if (appointmentType.includes('육아') || appointmentType.includes('7호')) {
             console.log('    → 육아휴직');
@@ -554,7 +534,6 @@ class CareerCalculator {
 
     // 학교명 추출
     extractSchoolName(assignment) {
-        // 간단한 학교명 추출
         const match = assignment.match(/(\S*[초중고등]학교)/);
         return match ? match[1] : assignment.substring(0, 20) + '...';
     }
@@ -566,10 +545,9 @@ class CareerCalculator {
             sampleData.select();
             document.execCommand('copy');
 
-            // 복사 완료 알림
             const btn = document.getElementById('copy-sample-btn');
             const originalText = btn.textContent;
-            btn.textContent = '✅ 복사 완료!';
+            btn.textContent = '복사 완료!';
             btn.style.background = '#059669';
             btn.style.color = 'white';
 
@@ -589,7 +567,6 @@ class CareerCalculator {
             modal.classList.remove('hidden');
             this.showStep(1);
 
-            // 입력 필드 포커스
             setTimeout(() => {
                 const textarea = document.getElementById('career-data-input');
                 if (textarea) {
@@ -605,7 +582,6 @@ class CareerCalculator {
         if (modal) {
             modal.classList.add('hidden');
 
-            // 입력 필드 초기화
             const textarea = document.getElementById('career-data-input');
             if (textarea) {
                 textarea.value = '';
@@ -617,7 +593,6 @@ class CareerCalculator {
 
     // 단계 표시
     showStep(stepNumber) {
-        // 모든 단계 숨기기
         for (let i = 1; i <= 3; i++) {
             const stepContent = document.getElementById(`step-${i}`);
             const stepIndicator = document.querySelector(`[data-step="${i}"]`);
@@ -643,9 +618,7 @@ class CareerCalculator {
             return;
         }
 
-        console.log('\n🚀 입력 데이터 파싱 시작');
-        console.log('원본 데이터 샘플:');
-        console.log(inputData.substring(0, 200) + '...');
+        console.log('\n입력 데이터 파싱 시작');
 
         try {
             this.parsedData = this.parseCareerData(inputData);
@@ -671,12 +644,12 @@ class CareerCalculator {
         // 요약 정보
         html += `
             <div class="alert alert-info">
-                <h4>📊 파싱 결과 요약</h4>
+                <h4>파싱 결과 요약</h4>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
-                    <div>✅ 일반 근무: <strong>${summary.schoolCount}개</strong></div>
-                    <div>🟡 휴직: <strong>${summary.leaveCount}개</strong></div>
-                    <div>⭐️ 제외된 항목: <strong>${summary.skippedCount}개</strong></div>
-                    <div>❌ 오류: <strong>${summary.errorCount}개</strong></div>
+                    <div>일반 근무: <strong>${summary.schoolCount}개</strong></div>
+                    <div>휴직: <strong>${summary.leaveCount}개</strong></div>
+                    <div>제외된 항목: <strong>${summary.skippedCount}개</strong></div>
+                    <div>오류: <strong>${summary.errorCount}개</strong></div>
                 </div>
             </div>
         `;
@@ -684,7 +657,7 @@ class CareerCalculator {
         // 일반 근무
         if (schools.length > 0) {
             html += '<div class="parse-section parse-section--schools">';
-            html += '<h4>✅ 일반 근무 경력</h4>';
+            html += '<h4>일반 근무 경력</h4>';
             html += '<ul class="parse-list">';
             schools.forEach(school => {
                 html += `
@@ -703,7 +676,7 @@ class CareerCalculator {
         // 휴직
         if (leaves.length > 0) {
             html += '<div class="parse-section parse-section--leaves">';
-            html += '<h4>🟡 휴직 정보</h4>';
+            html += '<h4>휴직 정보</h4>';
             html += '<ul class="parse-list">';
             leaves.forEach(leave => {
                 const effect = leave.isOneYearOrMore ? '학교만기 제외' : '학교만기 포함';
@@ -725,7 +698,7 @@ class CareerCalculator {
         // 제외된 항목
         if (skipped.length > 0) {
             html += '<div class="parse-section parse-section--skipped">';
-            html += '<h4>⭐️ 제외된 항목</h4>';
+            html += '<h4>제외된 항목</h4>';
             html += '<ul class="parse-list">';
             skipped.forEach(skip => {
                 html += `
@@ -741,7 +714,7 @@ class CareerCalculator {
         // 오류
         if (errors.length > 0) {
             html += '<div class="parse-section parse-section--errors">';
-            html += '<h4>❌ 오류</h4>';
+            html += '<h4>오류</h4>';
             html += '<ul class="parse-list">';
             errors.forEach(error => {
                 html += `<li class="parse-item" style="color: #dc2626;">${error}</li>`;
@@ -767,9 +740,9 @@ class CareerCalculator {
         if (summaryDiv) {
             summaryDiv.innerHTML = `
                 <div style="background: #d1fae5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <div>✅ 일반 근무: <strong>${schools.length}개</strong> 등록</div>
-                    <div>🟡 휴직: <strong>${leaves.length}개</strong> 등록</div>
-                    <div>📊 총 데이터: <strong>${this.schools.length + this.leaves.length}개</strong></div>
+                    <div>일반 근무: <strong>${schools.length}개</strong> 등록</div>
+                    <div>휴직: <strong>${leaves.length}개</strong> 등록</div>
+                    <div>총 데이터: <strong>${this.schools.length + this.leaves.length}개</strong></div>
                 </div>
                 <p>만기 계산 결과를 확인하세요.</p>
             `;
@@ -861,41 +834,54 @@ class CareerCalculator {
         if (!statusEl) return;
 
         if (!this.currentRegion || !this.currentTransferDate) {
-            statusEl.innerHTML = '⚠️ 현임교 정보(지역, 전입일자)를 입력한 후 만기를 계산할 수 있습니다.';
+            statusEl.innerHTML = '현임교 정보(지역, 전입일자)를 입력한 후 만기를 계산할 수 있습니다.';
             statusEl.className = 'alert alert-warning';
         } else if (this.schools.length === 0 && this.leaves.length === 0) {
-            statusEl.innerHTML = '📋 경력 데이터를 등록한 후 만기를 계산할 수 있습니다.';
+            statusEl.innerHTML = '경력 데이터를 등록한 후 만기를 계산할 수 있습니다.';
             statusEl.className = 'alert alert-info';
         } else {
-            statusEl.innerHTML = '✅ 만기 계산이 가능합니다. 계산 버튼을 눌러주세요.';
+            statusEl.innerHTML = '만기 계산이 가능합니다. 계산 버튼을 눌러주세요.';
             statusEl.className = 'alert alert-success';
         }
     }
 
-    // 만기 계산
+    // 🔧 완전 수정된 만기 계산 로직
     calculateExpiry() {
         if (!this.currentRegion || !this.currentTransferDate) {
             console.log('만기 계산 불가: 현임교 정보 부족');
             return;
         }
 
-        console.log('📈 만기 계산 시작');
+        console.log('=== 🔧 수정된 만기 계산 시작 ===');
+        console.log('현임교 전입일자:', this.formatDate(this.currentTransferDate));
 
         const today = new Date();
         const regionData = this.regionalSettings[this.currentRegion];
 
-        // 현임교 근무기간
-        const currentDays = Math.floor((today - this.currentTransferDate) / (1000 * 60 * 60 * 24)) + 1;
-
-        // 학교 만기 계산 (1년 이상 휴직 제외)
+        // ⭐️ 학교 만기 계산: 전입일자 + 5년 + 1년이상휴직일수
         const oneYearPlusLeaveDays = this.leaves
             .filter(leave => leave.isOneYearOrMore)
             .reduce((sum, leave) => sum + leave.totalDays, 0);
 
+        console.log('학교 만기 계산 상세:');
+        console.log('- 전입일자:', this.formatDate(this.currentTransferDate));
+        console.log('- 기본 임용기간:', regionData.schoolTerm + '년');
+        console.log('- 1년 이상 휴직일수:', oneYearPlusLeaveDays);
+
+        // 학교 만기일 = 전입일자 + 5년 + 1년이상휴직일수
+        const schoolExpiryDate = new Date(this.currentTransferDate);
+        schoolExpiryDate.setFullYear(schoolExpiryDate.getFullYear() + regionData.schoolTerm);
+        schoolExpiryDate.setDate(schoolExpiryDate.getDate() + oneYearPlusLeaveDays);
+
+        // 현재까지 유효 근무일수
+        const currentDays = Math.floor((today - this.currentTransferDate) / (1000 * 60 * 60 * 24)) + 1;
         const schoolEffectiveDays = currentDays - oneYearPlusLeaveDays;
-        const schoolTermDays = regionData.schoolTerm * 365;
-        const schoolRemainingDays = Math.max(0, schoolTermDays - schoolEffectiveDays);
-        const schoolExpiryDate = new Date(today.getTime() + schoolRemainingDays * 24 * 60 * 60 * 1000);
+        const schoolRemainingDays = Math.max(0, Math.floor((schoolExpiryDate - today) / (1000 * 60 * 60 * 24)));
+
+        console.log('- 현재 총 재직일수:', currentDays);
+        console.log('- 유효 근무일수:', schoolEffectiveDays);
+        console.log('- 계산된 학교만기일:', this.formatDate(schoolExpiryDate));
+        console.log('- 남은 일수:', schoolRemainingDays);
 
         // 지역 만기 계산 (전체 경력)
         let regionalTotalDays = currentDays;
@@ -940,7 +926,7 @@ class CareerCalculator {
             }
         });
 
-        console.log('✅ 만기 계산 완료');
+        console.log('=== ✅ 만기 계산 완료 ===');
     }
 
     // 계산 결과 표시
@@ -1091,8 +1077,8 @@ let calculator;
 
 // DOM 로드 완료시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 휴직 인식 완전 개선된 경력계산기 초기화');
+    console.log('🔧 만기계산 오류 해결된 경력계산기 초기화');
     calculator = new CareerCalculator();
 });
 
-console.log('✅ 휴직 인식 완전 해결된 경력계산기 스크립트 로드 완료');
+console.log('✅ 만기계산 오류 완전 해결된 경력계산기 스크립트 로드 완료');
