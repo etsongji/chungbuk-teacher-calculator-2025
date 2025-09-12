@@ -1476,3 +1476,65 @@ body {
 .leave-item, .previous-school-item {
   animation: fadeIn var(--duration-normal) var(--ease-standard);
 }
+
+/* 자동 파싱 모달 스타일 */
+.parse-preview-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    padding: var(--space-16);
+    background: var(--color-bg-2);
+}
+
+.parse-preview-content h4 {
+    color: var(--color-edu-blue);
+    margin: var(--space-16) 0 var(--space-8) 0;
+    font-size: var(--font-size-base);
+}
+
+.parse-preview-content h4:first-child {
+    margin-top: 0;
+}
+
+.preview-list, .error-list {
+    margin: 0;
+    padding-left: var(--space-20);
+}
+
+.preview-list li {
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-sm);
+}
+
+.error-list li {
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-sm);
+}
+
+.error-item {
+    color: var(--color-error);
+}
+
+#career-data-input {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+}
+
+.form-help {
+    display: block;
+    margin-top: var(--space-4);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-normal);
+}
+
+/* 버튼 그룹 스타일 개선 */
+.card__header .btn {
+    margin-left: var(--space-8);
+}
+
+.card__header .btn:first-child {
+    margin-left: 0;
+}

@@ -158,6 +158,23 @@ function setupEventListeners() {
     setupPreviousSchoolModalEvents();
     setupLeaveModalEvents();
     
+    
+    // 자동 파싱 버튼
+    const autoParseBtn = document.getElementById('auto-parse-btn');
+    if (autoParseBtn) {
+        autoParseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Auto parse button clicked');
+            showAutoParseModal();
+        });
+        console.log('Auto parse button listener added');
+    } else {
+        console.error('autoParseBtn not found');
+    }
+
+    // 자동 파싱 모달 이벤트
+    setupAutoParseModalEvents();
     console.log('All event listeners set up successfully');
 }
 
@@ -715,39 +732,104 @@ function getRegionDisplayName(regionKey) {
     return name;
 }
 
+
+
+// 효과적인 재직기간 계산 (휴직 1년 기준 적용)
+function calculateEffectiveService(transferDate, today, leaves) {
+    if (!transferDate) return { totalDays: 0, schoolEffectiveDays: 0, regionalEffectiveDays: 0 };
+
+    const totalDays = Math.floor((today - transferDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    // 학교 만기용: 1년 이상 휴직만 제외
+    let schoolExcludedDays = 0;
+    // 지역 만기용: 모든 불인정 휴직 제외
+    let regionalExcludedDays = 0;
+
+    leaves.forEach(leave => {
+        const leaveTypeData = leaveTypes[leave.type];
+        const leaveDays = Math.floor((leave.endDate - leave.startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+        // 1년 이상 휴직인지 확인 (새로운 로직)
+        const isOneYearOrMore = leave.isOneYearOrMore || (leaveDays >= 365);
+
+        if (isOneYearOrMore) {
+            // 1년 이상 휴직: 학교 만기에서 제외
+            schoolExcludedDays += leaveDays;
+        }
+
+        // 지역 만기: 기존 규정대로 (includedInService가 false인 것만 제외)
+        if (!leaveTypeData.includedInService) {
+            regionalExcludedDays += leaveDays;
+        }
+
+        console.log(`휴직 처리: ${leaveTypeData.label}, ${leaveDays}일, ` +
+                   `학교만기: ${isOneYearOrMore ? '제외' : '포함'}, ` +
+                   `지역만기: ${leaveTypeData.includedInService ? '포함' : '제외'}`);
+    });
+
+    return {
+        totalDays,
+        schoolEffectiveDays: totalDays - schoolExcludedDays,
+        regionalEffectiveDays: totalDays - regionalExcludedDays
+    };
+}
+
 function calculateAndDisplayExpiryDates() {
-    const regionData = regionalSettings[currentRegion];
-    const schoolTermDays = regionData.schoolTerm * 365; // 5년
-    const regionalTermDays = regionData.regionalTerm * 365; // 지역별 차등
+    if (!currentTransferDate) {
+        console.log('현재 전입일이 설정되지 않음');
+        return;
+    }
 
-    // 휴직 제외 기간 계산
-    const { excludedDays } = calculateEffectiveService();
-
-    // 학교 만기일 (현임교 기준)
-    const schoolExpiryDate = new Date(currentTransferDate.getTime() + (schoolTermDays + excludedDays) * 24 * 60 * 60 * 1000);
-
-    // 지역 만기일 (전체 지역 경력 기준) - 첫 전입일 기준으로 계산
-    const firstRegionalEntryDate = getFirstRegionalEntryDate();
-    const regionalExpiryDate = new Date(firstRegionalEntryDate.getTime() + (regionalTermDays + excludedDays) * 24 * 60 * 60 * 1000);
-
-    // 결과 표시
-    if (schoolExpiryEl) schoolExpiryEl.textContent = formatDate(schoolExpiryDate);
-    if (regionalExpiryEl) regionalExpiryEl.textContent = formatDate(regionalExpiryDate);
-
-    // 남은 기간 계산
     const today = new Date();
-    const schoolRemaining = calculateServicePeriod(today, schoolExpiryDate);
-    const regionalRemaining = calculateServicePeriod(today, regionalExpiryDate);
+    const regionData = regionalSettings[currentRegion] || regionalSettings['other'];
 
+    // 효과적인 재직기간 계산 (휴직 1년 기준 적용)
+    const serviceData = calculateEffectiveService(currentTransferDate, today, leaves);
+
+    // 학교 만기 계산 (5년 기준, 1년 이상 휴직 제외)
+    const schoolTermDays = regionData.schoolTerm * 365;
+    const schoolRemainingDays = Math.max(0, schoolTermDays - serviceData.schoolEffectiveDays);
+    const schoolExpiryDate = new Date(today.getTime() + schoolRemainingDays * 24 * 60 * 60 * 1000);
+
+    // 지역 만기 계산 (기존 방식)
+    let totalRegionalDays = serviceData.regionalEffectiveDays;
+
+    // 전임교 경력 추가 (지역별)
+    previousSchools.forEach(school => {
+        if (school.region === currentRegion) {
+            const schoolDays = Math.floor((school.endDate - school.startDate) / (1000 * 60 * 60 * 24)) + 1;
+            totalRegionalDays += schoolDays;
+        }
+    });
+
+    const regionalTermDays = regionData.regionalTerm * 365;
+    const regionalRemainingDays = Math.max(0, regionalTermDays - totalRegionalDays);
+    const regionalExpiryDate = new Date(today.getTime() + regionalRemainingDays * 24 * 60 * 60 * 1000);
+
+    // UI 업데이트
+    if (schoolExpiryEl) {
+        schoolExpiryEl.textContent = formatDate(schoolExpiryDate);
+    }
+    if (regionalExpiryEl) {
+        regionalExpiryEl.textContent = formatDate(regionalExpiryDate);
+    }
     if (schoolRemainingEl) {
-        schoolRemainingEl.textContent = schoolRemaining.totalDays > 0 ? 
-            `${formatServicePeriod(schoolRemaining)} 남음` : '만료됨';
+        const years = Math.floor(schoolRemainingDays / 365);
+        const months = Math.floor((schoolRemainingDays % 365) / 30);
+        schoolRemainingEl.textContent = years > 0 ? `${years}년 ${months}개월` : `${months}개월`;
     }
-    
     if (regionalRemainingEl) {
-        regionalRemainingEl.textContent = regionalRemaining.totalDays > 0 ? 
-            `${formatServicePeriod(regionalRemaining)} 남음` : '만료됨';
+        const years = Math.floor(regionalRemainingDays / 365);
+        const months = Math.floor((regionalRemainingDays % 365) / 30);
+        regionalRemainingEl.textContent = years > 0 ? `${years}년 ${months}개월` : `${months}개월`;
     }
+
+    console.log('만기 계산 완료:', {
+        학교효과일수: serviceData.schoolEffectiveDays,
+        지역효과일수: totalRegionalDays,
+        학교남은일수: schoolRemainingDays,
+        지역남은일수: regionalRemainingDays
+    });
 }
 
 function getFirstRegionalEntryDate() {
@@ -783,62 +865,21 @@ function calculateEffectiveService() {
 }
 
 function calculateServicePeriod(startDate, endDate) {
-    if (endDate <= startDate) {
+    const diffTime = endDate - startDate;
+    const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (totalDays < 0) {
         return { years: 0, months: 0, days: 0, totalDays: 0 };
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    // 총 일수 (양끝 포함)
-    const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-    // 년/월/일 기본 계산
-    let years = end.getFullYear() - start.getFullYear();
-    let months = end.getMonth() - start.getMonth();
-    let days = end.getDate() - start.getDate() + 1;
-
-    // 일수가 0 이하면 조정
-    if (days <= 0) {
-        months--;
-        const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
-        days += prevMonth.getDate();
-    }
-
-    // 월수가 음수면 조정
-    if (months < 0) {
-        years--;
-        months += 12;
-    }
-
-    // 교육행정 관례: 12개월은 1년으로 처리
-    if (months >= 12) {
-        years += Math.floor(months / 12);
-        months = months % 12;
-    }
-
-    // 실무 관례: 11개월 25일 이상이면 만년으로 올림 처리 (선택적)
-    // if (months === 11 && days >= 25) {
-    //     years++;
-    //     months = 0;
-    //     days = 0;
-    // }
-
-    return { years, months, days, totalDays };
+    return convertDaysToServicePeriod(totalDays);
 }
 
 function convertDaysToServicePeriod(totalDays) {
-    if (totalDays <= 0) {
-        return { years: 0, months: 0, days: 0, totalDays: 0 };
-    }
-
-    // 더 정확한 계산을 위해 평년 기준으로 계산
     const years = Math.floor(totalDays / 365);
-    let remainingDays = totalDays - (years * 365);
-
-    // 월 계산 (평균 30.44일/월이 아닌 실제 30일 기준)
+    const remainingDays = totalDays % 365;
     const months = Math.floor(remainingDays / 30);
-    const days = remainingDays - (months * 30);
+    const days = remainingDays % 30;
 
     return { years, months, days, totalDays };
 }
@@ -924,19 +965,9 @@ function formatDuration(duration) {
 
 function formatServicePeriod(period) {
     const parts = [];
-
-    // 12개월은 1년으로 자동 변환
-    let { years, months, days } = period;
-
-    if (months >= 12) {
-        years += Math.floor(months / 12);
-        months = months % 12;
-    }
-
-    if (years > 0) parts.push(`${years}년`);
-    if (months > 0) parts.push(`${months}개월`);
-    if (days > 0 && years === 0) parts.push(`${days}일`); // 년이 있으면 일은 생략
-
+    if (period.years > 0) parts.push(`${period.years}년`);
+    if (period.months > 0) parts.push(`${period.months}개월`);
+    if (period.days > 0) parts.push(`${period.days}일`);
     return parts.join(' ') || '0일';
 }
 
@@ -1028,3 +1059,391 @@ function updateLeaveSummary() {
 // 전역 함수로 노출 (HTML onclick에서 사용)
 window.removePreviousSchool = removePreviousSchool;
 window.removeLeave = removeLeave;
+
+// ==================== 자동 경력 데이터 파싱 기능 ====================
+
+// 휴직 키워드 매핑
+const leaveKeywordMap = {
+    '육아휴직': 'parental',
+    '7호:육아휴직': 'parental', 
+    '질병휴직': 'sick',
+    '유학휴직': 'study',
+    '병역휴직': 'military',
+    '가족돌봄휴직': 'family_care',
+    '노조전임자': 'union_official',
+    '휴직': 'other'
+};
+
+// 지역 키워드 매핑
+// 지역 키워드 매핑
+const regionKeywordMap = {
+    'chungju': ['충주', '충주시', '충주고등학교', '충주여자고등학교'],
+    'jecheon': ['제천', '제천시'],
+    'cheongju': ['청주', '청주시', '상당구', '서원구', '흥덕구', '청원구'],
+    'other': []
+};
+
+// 경력 데이터 파싱 함수
+function parseCareerData(textData) {
+    console.log('경력 데이터 파싱 시작:', textData.length, '글자');
+
+    const lines = textData.trim().split('\n');
+    const parsedSchools = [];
+    const parsedLeaves = [];
+    const errors = [];
+
+    const datePattern = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*~\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/;
+
+    lines.forEach((line, index) => {
+        if (!line.trim()) return;
+
+        console.log(`라인 ${index + 1} 파싱:`, line.substring(0, 50) + '...');
+
+        // 날짜 추출
+        const dateMatch = line.match(datePattern);
+        if (!dateMatch) {
+            errors.push(`라인 ${index + 1}: 날짜 패턴을 찾을 수 없습니다`);
+            return;
+        }
+
+        const startYear = parseInt(dateMatch[1]);
+        const startMonth = parseInt(dateMatch[2]);
+        const startDay = parseInt(dateMatch[3]);
+        const endYear = parseInt(dateMatch[4]);
+        const endMonth = parseInt(dateMatch[5]);
+        const endDay = parseInt(dateMatch[6]);
+
+        const startDate = new Date(startYear, startMonth - 1, startDay);
+        const endDate = new Date(endYear, endMonth - 1, endDay);
+
+        // 데이터 구조 파싱: 기간, 임용구분, 직급, 부서, 발령
+        const parts = line.split('\t');
+        if (parts.length < 5) {
+            errors.push(`라인 ${index + 1}: 데이터 구조가 올바르지 않습니다 (5개 컬럼 필요)`);
+            return;
+        }
+
+        const period = parts[0].trim();          // 기간
+        const appointmentType = parts[1].trim(); // 임용구분  
+        const position = parts[2].trim();        // 직급
+        const department = parts[3].trim();      // 부서
+        const assignment = parts[4].trim();      // 발령
+
+        // 지역 확인
+        let detectedRegion = 'other';
+        const fullText = line.toLowerCase();
+        for (const [region, keywords] of Object.entries(regionKeywordMap)) {
+            if (keywords.some(keyword => fullText.includes(keyword.toLowerCase()))) {
+                detectedRegion = region;
+                break;
+            }
+        }
+
+        // 임용구분에서 '휴직' 여부 확인
+        if (appointmentType.includes('휴직')) {
+            // 휴직 기간 계산
+            const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            const isOneYearOrMore = totalDays >= 365;
+
+            // 휴직 유형 결정 (기본적으로는 모두 일반 휴직이지만, 키워드로 세분화)
+            let leaveType = 'other';
+            if (appointmentType.includes('육아') || appointmentType.includes('7호')) {
+                leaveType = 'parental';
+            } else if (appointmentType.includes('질병')) {
+                leaveType = 'sick'; 
+            } else if (appointmentType.includes('유학')) {
+                leaveType = 'study';
+            } else if (appointmentType.includes('병역')) {
+                leaveType = 'military';
+            } else if (appointmentType.includes('가족돌봄')) {
+                leaveType = 'family_care';
+            } else if (appointmentType.includes('노조')) {
+                leaveType = 'union_official';
+            }
+
+            parsedLeaves.push({
+                type: leaveType,
+                startDate: startDate,
+                endDate: endDate,
+                school: 'current', // 현임교로 기본 설정
+                isOneYearOrMore: isOneYearOrMore,
+                totalDays: totalDays,
+                appointmentType: appointmentType,
+                originalLine: line,
+                lineNumber: index + 1
+            });
+
+            console.log(`  ✅ 휴직: ${leaveType}, ${totalDays}일 (${isOneYearOrMore ? '1년이상' : '1년미만'})`);
+
+        } else {
+            // 일반 근무 (보직교사, 담임교사 등)
+            const schoolName = assignment || `${department} 근무` || `${detectedRegion} 근무`;
+
+            parsedSchools.push({
+                name: schoolName,
+                region: detectedRegion,
+                subRegion: detectedRegion === 'cheongju' ? 'dong' : null,
+                startDate: startDate,
+                endDate: endDate,
+                appointmentType: appointmentType,
+                position: position,
+                department: department,
+                originalLine: line,
+                lineNumber: index + 1
+            });
+
+            console.log(`  ✅ 일반근무: ${schoolName}, ${detectedRegion}, ${appointmentType}`);
+        }
+    });
+
+    console.log('파싱 완료:', {
+        일반근무: parsedSchools.length,
+        휴직: parsedLeaves.length,
+        오류: errors.length
+    });
+
+    return { schools: parsedSchools, leaves: parsedLeaves, errors };
+}
+
+// 파싱된 데이터를 시스템에 자동 등록
+function registerParsedData(parsedData) {
+    const { schools, leaves, errors } = parsedData;
+    let successCount = 0;
+    let failCount = 0;
+
+    // 전임교 경력 등록
+    schools.forEach(school => {
+        try {
+            // 중복 체크
+            const isDuplicate = previousSchools.some(existing => 
+                existing.startDate.getTime() === school.startDate.getTime() &&
+                existing.endDate.getTime() === school.endDate.getTime()
+            );
+
+            if (!isDuplicate) {
+                const newSchool = {
+                    id: Date.now() + Math.random(),
+                    name: school.name,
+                    region: school.region,
+                    subRegion: school.subRegion,
+                    startDate: school.startDate,
+                    endDate: school.endDate,
+                    duration: calculateServicePeriod(school.startDate, school.endDate)
+                };
+
+                previousSchools.push(newSchool);
+                successCount++;
+                console.log('전임교 등록:', newSchool.name);
+            } else {
+                console.log('전임교 중복 제외:', school.name);
+            }
+        } catch (error) {
+            console.error('전임교 등록 오류:', error);
+            failCount++;
+        }
+    });
+
+    // 휴직 정보 등록
+    leaves.forEach(leave => {
+        try {
+            // 중복 체크
+            const isDuplicate = leaves.some(existing =>
+                existing.startDate.getTime() === leave.startDate.getTime() &&
+                existing.endDate.getTime() === leave.endDate.getTime() &&
+                existing.type === leave.type
+            );
+
+            if (!isDuplicate) {
+                const newLeave = {
+                    id: Date.now() + Math.random(),
+                    type: leave.type,
+                    school: leave.school,
+                    startDate: leave.startDate,
+                    endDate: leave.endDate,
+                    duration: calculateServicePeriod(leave.startDate, leave.endDate),
+                    isOneYearOrMore: leave.isOneYearOrMore, // 1년 이상 여부 저장
+                    totalDays: leave.totalDays,
+                    appointmentType: leave.appointmentType
+                };
+
+                leaves.push(newLeave);
+                successCount++;
+                console.log('휴직 등록:', leaveTypes[leave.type].label);
+            } else {
+                console.log('휴직 중복 제외:', leaveTypes[leave.type].label);
+            }
+        } catch (error) {
+            console.error('휴직 등록 오류:', error);
+            failCount++;
+        }
+    });
+
+    // UI 업데이트
+    updatePreviousSchoolsList();
+    updateLeaveList();
+    updateLeaveSchoolOptions();
+    updateResults();
+
+    // 결과 메시지
+    let message = `등록 완료!\n성공: ${successCount}개`;
+    if (failCount > 0) message += `\n실패: ${failCount}개`;
+    if (errors.length > 0) message += `\n오류: ${errors.length}개`;
+
+    alert(message);
+
+    if (errors.length > 0) {
+        console.log('파싱 오류 목록:', errors);
+    }
+
+    return { successCount, failCount, errors };
+}
+
+// 자동 파싱 모달 표시
+function showAutoParseModal() {
+    const modal = document.getElementById('auto-parse-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        const textarea = document.getElementById('career-data-input');
+        if (textarea) {
+            setTimeout(() => textarea.focus(), 100);
+        }
+    }
+}
+
+// 자동 파싱 모달 숨기기
+function hideAutoParseModal() {
+    const modal = document.getElementById('auto-parse-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        // 입력 필드 초기화
+        const textarea = document.getElementById('career-data-input');
+        if (textarea) textarea.value = '';
+
+        const preview = document.getElementById('parse-preview');
+        if (preview) preview.innerHTML = '';
+    }
+}
+
+// 파싱 미리보기
+function previewParsedData() {
+    const textarea = document.getElementById('career-data-input');
+    const preview = document.getElementById('parse-preview');
+
+    if (!textarea || !preview) return;
+
+    const textData = textarea.value.trim();
+    if (!textData) {
+        preview.innerHTML = '<p class="text-secondary">데이터를 입력해주세요.</p>';
+        return;
+    }
+
+    try {
+        const parsed = parseCareerData(textData);
+
+        let html = '<div class="parse-preview-content">';
+
+        // 일반 근무 경력
+        if (parsed.schools.length > 0) {
+            html += '<h4>일반 근무 경력 (' + parsed.schools.length + '개)</h4>';
+            html += '<ul class="preview-list">';
+            parsed.schools.forEach(school => {
+                html += `<li><strong>${school.name}</strong> (${regionalSettings[school.region]?.name}) - ${formatDate(school.startDate)} ~ ${formatDate(school.endDate)} <span class="text-secondary">[${school.appointmentType}]</span></li>`;
+            });
+            html += '</ul>';
+        }
+
+        // 휴직 정보  
+        if (parsed.leaves.length > 0) {
+            html += '<h4>휴직 정보 (' + parsed.leaves.length + '개)</h4>';
+            html += '<ul class="preview-list">';
+            parsed.leaves.forEach(leave => {
+                const effect = leave.isOneYearOrMore ? '학교만기 제외' : '재직기간 포함';
+                const effectClass = leave.isOneYearOrMore ? 'error-item' : 'status--success';
+                html += `<li><strong>${leaveTypes[leave.type].label}</strong> - ${formatDate(leave.startDate)} ~ ${formatDate(leave.endDate)} <span class="${effectClass}">[${effect}]</span> <span class="text-secondary">(${leave.totalDays}일)</span></li>`;
+            });
+            html += '</ul>';
+        }
+
+        // 오류
+        if (parsed.errors.length > 0) {
+            html += '<h4>오류 (' + parsed.errors.length + '개)</h4>';
+            html += '<ul class="error-list">';
+            parsed.errors.forEach(error => {
+                html += `<li class="error-item">${error}</li>`;
+            });
+            html += '</ul>';
+        }
+
+        if (parsed.schools.length === 0 && parsed.leaves.length === 0) {
+            html += '<p class="text-secondary">파싱할 수 있는 데이터가 없습니다.</p>';
+            html += '<p class="text-secondary">데이터 형식: 기간 [탭] 임용구분 [탭] 직급 [탭] 부서 [탭] 발령</p>';
+        }
+
+        html += '</div>';
+        preview.innerHTML = html;
+
+    } catch (error) {
+        preview.innerHTML = `<p class="error-item">파싱 오류: ${error.message}</p>`;
+    }
+}
+
+// 자동 등록 실행
+function executeAutoParse() {
+    const textarea = document.getElementById('career-data-input');
+    if (!textarea) return;
+
+    const textData = textarea.value.trim();
+    if (!textData) {
+        alert('데이터를 입력해주세요.');
+        return;
+    }
+
+    try {
+        const parsed = parseCareerData(textData);
+
+        if (parsed.schools.length === 0 && parsed.leaves.length === 0) {
+            alert('파싱할 수 있는 데이터가 없습니다.');
+            return;
+        }
+
+        const result = registerParsedData(parsed);
+        hideAutoParseModal();
+
+    } catch (error) {
+        alert('오류가 발생했습니다: ' + error.message);
+        console.error('Auto parse error:', error);
+    }
+}
+
+
+// 자동 파싱 모달 이벤트 설정
+function setupAutoParseModalEvents() {
+    const modal = document.getElementById('auto-parse-modal');
+    const closeBtn = document.getElementById('auto-parse-close-btn');
+    const cancelBtn = document.getElementById('auto-parse-cancel-btn');
+    const previewBtn = document.getElementById('auto-parse-preview-btn');
+    const executeBtn = document.getElementById('auto-parse-execute-btn');
+    const textarea = document.getElementById('career-data-input');
+
+    if (closeBtn) closeBtn.addEventListener('click', hideAutoParseModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', hideAutoParseModal);
+    if (previewBtn) previewBtn.addEventListener('click', previewParsedData);
+    if (executeBtn) executeBtn.addEventListener('click', executeAutoParse);
+
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) hideAutoParseModal();
+        });
+    }
+
+    // 입력시 자동 미리보기 (디바운스)
+    if (textarea) {
+        let timeout;
+        textarea.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(previewParsedData, 500);
+        });
+    }
+
+    console.log('Auto parse modal events set up');
+}
