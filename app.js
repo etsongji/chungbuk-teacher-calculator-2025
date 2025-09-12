@@ -872,10 +872,17 @@ class CareerCalculator {
         console.log('- 기본 임용기간:', regionData.schoolTerm + '년');
         console.log('- 1년 이상 휴직일수:', oneYearPlusLeaveDays);
 
-        // 학교 만기일 = 전입일자 + 5년 + 1년이상휴직일수
+        // 학교 만기일 = 전입일자 + 5년 + 1년이상휴직일수, 단 2월 28일로 조정
         const schoolExpiryDate = new Date(this.currentTransferDate);
         schoolExpiryDate.setFullYear(schoolExpiryDate.getFullYear() + regionData.schoolTerm);
         schoolExpiryDate.setDate(schoolExpiryDate.getDate() + oneYearPlusLeaveDays);
+        
+        // 학년도 기준으로 2월 28일로 조정
+        if (schoolExpiryDate.getMonth() >= 2) { // 3월 이후면 다음해 2월 28일
+            schoolExpiryDate.setFullYear(schoolExpiryDate.getFullYear() + 1);
+        }
+        schoolExpiryDate.setMonth(1); // 2월 (0-based)
+        schoolExpiryDate.setDate(28);
 
         // 현재까지 유효 근무일수
         const currentDays = Math.floor((today - this.currentTransferDate) / (1000 * 60 * 60 * 24)) + 1;
