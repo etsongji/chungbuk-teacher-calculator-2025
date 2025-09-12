@@ -1,4 +1,4 @@
-// 충북 교사 전보 만기계산기 - 만기계산 오류 완전 해결
+// 충북 교사 전보 만기계산기 - 학교만기 계산 완전 해결
 // 2025년 개정 인사관리기준 적용
 
 class CareerCalculator {
@@ -65,7 +65,7 @@ class CareerCalculator {
     }
 
     init() {
-        console.log('수정된 경력계산기 시작 - 만기계산 오류 해결');
+        console.log('최종 수정된 경력계산기 시작 - 학교만기 계산 완전 해결');
         this.setupEventListeners();
         this.updateUI();
     }
@@ -200,7 +200,7 @@ class CareerCalculator {
         this.calculateExpiry();
     }
 
-    // 완전히 수정된 파싱 엔진 - 탭 구분 데이터 처리
+    // 완전히 수정된 파싱 엔진
     parseCareerData(textData) {
         console.log('휴직 인식 개선된 파싱 엔진 시작');
         console.log('입력 데이터 길이:', textData.length);
@@ -845,14 +845,14 @@ class CareerCalculator {
         }
     }
 
-    // 🔧 완전 수정된 만기 계산 로직
+    // 🔧 완전 수정된 만기 계산 로직 - 학교만기 정확히 계산
     calculateExpiry() {
         if (!this.currentRegion || !this.currentTransferDate) {
             console.log('만기 계산 불가: 현임교 정보 부족');
             return;
         }
 
-        console.log('=== 🔧 수정된 만기 계산 시작 ===');
+        console.log('=== 🔧 최종 수정된 만기 계산 시작 ===');
         console.log('현임교 전입일자:', this.formatDate(this.currentTransferDate));
 
         const today = new Date();
@@ -870,19 +870,18 @@ class CareerCalculator {
         console.log('학교 만기 계산 상세:');
         console.log('- 전입일자:', this.formatDate(this.currentTransferDate));
         console.log('- 기본 임용기간:', regionData.schoolTerm + '년');
-        console.log('- 1년 이상 휴직일수:', oneYearPlusLeaveDays);
+        console.log('- 현임교 1년이상 휴직일수:', oneYearPlusLeaveDays);
 
-        // 학교 만기일 = 전입일자 + 5년 + 1년이상휴직일수, 단 2월 28일로 조정
-        const schoolExpiryDate = new Date(this.currentTransferDate);
-        schoolExpiryDate.setFullYear(schoolExpiryDate.getFullYear() + regionData.schoolTerm);
-        schoolExpiryDate.setDate(schoolExpiryDate.getDate() + oneYearPlusLeaveDays);
+        // 🔧 정확한 학교 만기일 계산: 전입년도 + 5년의 2월 28일
+        const transferYear = this.currentTransferDate.getFullYear();
+        const schoolExpiryYear = transferYear + regionData.schoolTerm;
+        const schoolExpiryDate = new Date(schoolExpiryYear, 1, 28); // 2월 28일
         
-        // 학년도 기준으로 2월 28일로 조정 (3월~2월이 한 학년도)
-        // 전입일이 3월이면 5년 후도 3월이므로, 직전 학년도 말인 2월 28일로 조정
-        const calculatedYear = schoolExpiryDate.getFullYear();
-        schoolExpiryDate.setFullYear(calculatedYear - 1); // 1년 앞당기기
-        schoolExpiryDate.setMonth(1); // 2월 (0-based)
-        schoolExpiryDate.setDate(28);
+        // 1년 이상 휴직이 있으면 해당 연수만큼 추가
+        if (oneYearPlusLeaveDays > 0) {
+            const additionalYears = Math.ceil(oneYearPlusLeaveDays / 365);
+            schoolExpiryDate.setFullYear(schoolExpiryDate.getFullYear() + additionalYears);
+        }
 
         // 현재까지 유효 근무일수
         const currentDays = Math.floor((today - this.currentTransferDate) / (1000 * 60 * 60 * 24)) + 1;
@@ -1092,8 +1091,8 @@ let calculator;
 
 // DOM 로드 완료시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 만기계산 오류 해결된 경력계산기 초기화');
+    console.log('🔧 학교만기 계산 완전 해결된 경력계산기 초기화');
     calculator = new CareerCalculator();
 });
 
-console.log('✅ 만기계산 오류 완전 해결된 경력계산기 스크립트 로드 완료');
+console.log('✅ 학교만기 계산 완전 해결된 경력계산기 스크립트 로드 완료');
