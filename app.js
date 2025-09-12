@@ -877,10 +877,10 @@ class CareerCalculator {
         schoolExpiryDate.setFullYear(schoolExpiryDate.getFullYear() + regionData.schoolTerm);
         schoolExpiryDate.setDate(schoolExpiryDate.getDate() + oneYearPlusLeaveDays);
         
-        // 학년도 기준으로 2월 28일로 조정
-        if (schoolExpiryDate.getMonth() >= 2) { // 3월 이후면 다음해 2월 28일
-            schoolExpiryDate.setFullYear(schoolExpiryDate.getFullYear() + 1);
-        }
+        // 학년도 기준으로 2월 28일로 조정 (3월~2월이 한 학년도)
+        // 전입일이 3월이면 5년 후도 3월이므로, 직전 학년도 말인 2월 28일로 조정
+        const calculatedYear = schoolExpiryDate.getFullYear();
+        schoolExpiryDate.setFullYear(calculatedYear - 1); // 1년 앞당기기
         schoolExpiryDate.setMonth(1); // 2월 (0-based)
         schoolExpiryDate.setDate(28);
 
