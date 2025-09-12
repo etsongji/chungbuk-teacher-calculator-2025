@@ -905,6 +905,7 @@ class CareerCalculator {
             .filter(school => school.region === this.currentRegion)
             .forEach(school => {
                 regionalTotalDays += school.totalDays;
+                console.log(`전임교 경력 추가: ${school.name} (${school.totalDays}일)`);
             });
 
         // 지역 만기용 휴직 제외 (includedInService가 false인 것만)
@@ -912,10 +913,18 @@ class CareerCalculator {
             .filter(leave => !this.leaveTypes[leave.type].includedInService)
             .reduce((sum, leave) => sum + leave.totalDays, 0);
 
+        console.log('지역 만기 계산 상세:');
+        console.log('- 현임교 근무일수:', currentDays);
+        console.log('- 전임교 경력 총합:', regionalTotalDays - currentDays);
+        console.log('- 지역만기용 제외 휴직일수:', regionalExcludedLeaveDays);
+
         const regionalEffectiveDays = regionalTotalDays - regionalExcludedLeaveDays;
         const regionalTermDays = regionData.regionalTerm * 365;
         const regionalRemainingDays = Math.max(0, regionalTermDays - regionalEffectiveDays);
         const regionalExpiryDate = new Date(today.getTime() + regionalRemainingDays * 24 * 60 * 60 * 1000);
+
+        console.log('- 지역 유효 근무일수:', regionalEffectiveDays);
+        console.log('- 지역 만기일:', this.formatDate(regionalExpiryDate));
 
         // 결과 표시
         this.displayCalculationResults({
