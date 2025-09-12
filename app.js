@@ -858,9 +858,13 @@ class CareerCalculator {
         const today = new Date();
         const regionData = this.regionalSettings[this.currentRegion];
 
-        // ⭐️ 학교 만기 계산: 전입일자 + 5년 + 1년이상휴직일수
+        // ⭐️ 학교 만기 계산: 현임교 기간 중 1년이상 휴직만 적용
         const oneYearPlusLeaveDays = this.leaves
-            .filter(leave => leave.isOneYearOrMore)
+            .filter(leave => {
+                // 현임교 전입일 이후의 휴직만 학교만기에 영향
+                const isAfterTransfer = leave.startDate >= this.currentTransferDate;
+                return leave.isOneYearOrMore && isAfterTransfer;
+            })
             .reduce((sum, leave) => sum + leave.totalDays, 0);
 
         console.log('학교 만기 계산 상세:');
