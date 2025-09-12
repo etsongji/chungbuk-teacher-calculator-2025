@@ -200,7 +200,7 @@ class CareerCalculator {
         this.calculateExpiry();
     }
 
-    // 🔥 완전히 수정된 파싱 엔진 - 휴직 인식 문제 해결
+    // 🔥 완전히 수정된 파싱 엔진 - 탭 구분 데이터 처리 개선
     parseCareerData(textData) {
         console.log('🔥 휴직 인식 완전 개선된 파싱 엔진 시작');
         console.log('입력 데이터 길이:', textData.length);
@@ -212,119 +212,89 @@ class CareerCalculator {
         const errors = [];
 
         console.log('전체 라인 수:', lines.length);
-        console.log('원본 데이터 미리보기:');
-        lines.slice(0, 10).forEach((line, i) => {
-            console.log(`  ${i}: ${line.substring(0, 50)}...`);
-        });
 
-        // 정규표현식 패턴
-        const datePattern = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*~\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/;
-        const ongoingDatePattern = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*~/;
-
-        let lineIndex = 0;
-
-        // 5줄씩 하나의 레코드로 처리
-        while (lineIndex < lines.length) {
-            if (lineIndex + 4 >= lines.length) {
-                console.log('마지막 레코드 - 라인 부족:', lineIndex, '/', lines.length);
-                break;
-            }
-
-            const period = lines[lineIndex].trim();
-            const appointmentType = lines[lineIndex + 1].trim();
-            const position = lines[lineIndex + 2].trim();
-            const department = lines[lineIndex + 3].trim();
-            const assignment = lines[lineIndex + 4].trim();
-
-            const recordNum = Math.floor(lineIndex/5) + 1;
-            console.log(`\n📋 === 레코드 ${recordNum} 상세 분석 ===`);
-            console.log(`라인 ${lineIndex}-${lineIndex + 4}:`);
-            console.log(`  [0] 기간: "${period}"`);
-            console.log(`  [1] 임용구분: "${appointmentType}"`);
-            console.log(`  [2] 직급: "${position}"`);
-            console.log(`  [3] 부서: "${department}"`);
-            console.log(`  [4] 발령: "${assignment}"`);
+        // 각 라인을 개별 레코드로 처리 (탭 구분)
+        lines.forEach((line, lineIndex) => {
+            console.log(`\n📋 === 라인 ${lineIndex + 1} 분석 ===`);
+            console.log(`원본: "${line}"`);
 
             try {
+                // 탭으로 분할
+                const columns = line.split('\t').map(col => col.trim());
+                console.log(`컬럼 수: ${columns.length}`);
+                console.log('컬럼들:', columns);
+
+                if (columns.length < 3) {
+                    console.log('  ⚠️ 컬럼 부족 - 건너뛰기');
+                    skipped.push({
+                        reason: '데이터 형식 오류 (컬럼 부족)',
+                        line: line,
+                        lineNumber: lineIndex + 1
+                    });
+                    return;
+                }
+
+                const period = columns[0] || '';
+                const appointmentType = columns[1] || '';
+                const position = columns[2] || '';
+                const department = columns[3] || '';
+                const assignment = columns[4] || '';
+
+                console.log(`  [0] 기간: "${period}"`);
+                console.log(`  [1] 임용구분: "${appointmentType}"`);
+                console.log(`  [2] 직급: "${position}"`);
+                console.log(`  [3] 부서: "${department}"`);
+                console.log(`  [4] 발령: "${assignment}"`);
+
                 // 날짜 파싱
-                let startDate = null;
-                let endDate = null;
-
-                let dateMatch = period.match(datePattern);
-                if (dateMatch) {
-                    startDate = new Date(
-                        parseInt(dateMatch[1]),
-                        parseInt(dateMatch[2]) - 1,
-                        parseInt(dateMatch[3])
-                    );
-                    endDate = new Date(
-                        parseInt(dateMatch[4]),
-                        parseInt(dateMatch[5]) - 1,
-                        parseInt(dateMatch[6])
-                    );
-                    console.log('  ✅ 날짜 파싱 성공 (완전한 기간)');
-                } else {
-                    // 진행 중인 경우
-                    const ongoingMatch = period.match(ongoingDatePattern);
-                    if (ongoingMatch) {
-                        startDate = new Date(
-                            parseInt(ongoingMatch[1]),
-                            parseInt(ongoingMatch[2]) - 1,
-                            parseInt(ongoingMatch[3])
-                        );
-                        endDate = new Date(); // 현재
-                        console.log('  ✅ 날짜 파싱 성공 (진행 중)');
-                    }
+                const { startDate, endDate, totalDays } = this.parseDateRange(period);
+                
+                if (!startDate || !endDate || totalDays <= 0) {
+                    console.error('  ❌ 날짜 파싱 실패');
+                    errors.push(`라인 ${lineIndex + 1}: 날짜 파싱 실패 - ${period}`);
+                    return;
                 }
 
-                if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-                    console.error('  ❌ 날짜 파싱 실패:', period);
-                    errors.push(`레코드 ${recordNum}: 날짜 파싱 실패 - ${period}`);
-                    lineIndex += 5;
-                    continue;
-                }
-
-                // 기간 계산
-                const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
                 console.log(`  📅 기간: ${this.formatDate(startDate)} ~ ${this.formatDate(endDate)} (${totalDays}일)`);
 
                 // 의미없는 기간 제외 (1일 이하)
                 if (totalDays <= 1) {
-                    console.log('  ⏭️ 제외: 무의미한 기간 (1일 이하)');
+                    console.log('  ⭐️ 제외: 무의미한 기간 (1일 이하)');
                     skipped.push({
                         reason: '무의미한 기간 (1일 이하)',
                         appointmentType,
                         period,
-                        days: totalDays
+                        days: totalDays,
+                        lineNumber: lineIndex + 1
                     });
-                    lineIndex += 5;
-                    continue;
+                    return;
                 }
 
                 // 🎯 핵심: 휴직 여부 판단
                 console.log('  🔍 분류 판단 시작...');
-                const isLeave = this.isLeaveRecord(appointmentType);
                 const isSkipRecord = this.isSkipRecord(appointmentType);
+                const isLeave = this.isLeaveRecord(appointmentType);
 
-                console.log(`  → isLeave: ${isLeave}`);
                 console.log(`  → isSkipRecord: ${isSkipRecord}`);
+                console.log(`  → isLeave: ${isLeave}`);
 
                 if (isSkipRecord) {
                     // 휴직복직, 전보 등 제외
                     const reason = this.getSkipReason(appointmentType);
-                    console.log(`  ⏭️ 최종 결정: 제외 (${reason})`);
+                    console.log(`  ⭐️ 최종 결정: 제외 (${reason})`);
                     skipped.push({
                         reason,
                         appointmentType,
                         period,
-                        days: totalDays
+                        days: totalDays,
+                        lineNumber: lineIndex + 1
                     });
                 } else if (isLeave) {
                     // 휴직으로 분류
                     const leaveType = this.detectLeaveType(appointmentType);
                     const isOneYearOrMore = totalDays >= 365;
 
-                    console.log(`  🟠 최종 결정: 휴직 - ${this.leaveTypes[leaveType].label}`);
+                    console.log(`  🟡 최종 결정: 휴직 - ${this.leaveTypes[leaveType].label}`);
                     console.log(`  📊 휴직 상세: ${totalDays}일, ${isOneYearOrMore ? '1년이상' : '1년미만'}`);
 
                     leaves.push({
@@ -335,12 +305,13 @@ class CareerCalculator {
                         isOneYearOrMore,
                         appointmentType,
                         period,
-                        assignment
+                        assignment: assignment || department,
+                        lineNumber: lineIndex + 1
                     });
                 } else {
                     // 일반 근무로 분류
-                    const region = this.detectRegion(department + ' ' + assignment);
-                    const schoolName = this.extractSchoolName(assignment);
+                    const region = this.detectRegion((department || '') + ' ' + (assignment || ''));
+                    const schoolName = this.extractSchoolName(assignment || department || '미상');
 
                     console.log(`  ✅ 최종 결정: 일반근무 - ${schoolName} (${this.regionalSettings[region].name})`);
 
@@ -353,17 +324,16 @@ class CareerCalculator {
                         totalDays,
                         appointmentType,
                         period,
-                        assignment
+                        assignment: assignment || department,
+                        lineNumber: lineIndex + 1
                     });
                 }
 
             } catch (error) {
-                console.error(`  ❌ 레코드 ${recordNum} 파싱 오류:`, error);
-                errors.push(`레코드 ${recordNum}: 파싱 오류 - ${error.message}`);
+                console.error(`  ❌ 라인 ${lineIndex + 1} 파싱 오류:`, error);
+                errors.push(`라인 ${lineIndex + 1}: 파싱 오류 - ${error.message}`);
             }
-
-            lineIndex += 5;
-        }
+        });
 
         const result = {
             schools,
@@ -389,6 +359,76 @@ class CareerCalculator {
         skipped.forEach((s, i) => console.log(`  ${i+1}. ${s.reason} (${s.appointmentType})`));
 
         return result;
+    }
+
+    // 날짜 범위 파싱 개선
+    parseDateRange(period) {
+        console.log(`    📅 날짜 파싱: "${period}"`);
+        
+        // 정규표현식 패턴들
+        const patterns = [
+            // 2024.03.01 ~ 2025.02.28 형식
+            /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*~\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/,
+            // 2024-03-01 ~ 2025-02-28 형식
+            /(\d{4})-(\d{1,2})-(\d{1,2})\s*~\s*(\d{4})-(\d{1,2})-(\d{1,2})/,
+            // 2024/03/01 ~ 2025/02/28 형식
+            /(\d{4})\/(\d{1,2})\/(\d{1,2})\s*~\s*(\d{4})\/(\d{1,2})\/(\d{1,2})/
+        ];
+
+        // 진행중인 경우 패턴들
+        const ongoingPatterns = [
+            /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*~/,
+            /(\d{4})-(\d{1,2})-(\d{1,2})\s*~/,
+            /(\d{4})\/(\d{1,2})\/(\d{1,2})\s*~/
+        ];
+
+        let startDate = null;
+        let endDate = null;
+
+        // 완전한 기간 매칭 시도
+        for (const pattern of patterns) {
+            const match = period.match(pattern);
+            if (match) {
+                startDate = new Date(
+                    parseInt(match[1]),
+                    parseInt(match[2]) - 1,
+                    parseInt(match[3])
+                );
+                endDate = new Date(
+                    parseInt(match[4]),
+                    parseInt(match[5]) - 1,
+                    parseInt(match[6])
+                );
+                console.log('    ✅ 완전한 기간 파싱 성공');
+                break;
+            }
+        }
+
+        // 진행중인 경우 매칭 시도
+        if (!startDate) {
+            for (const pattern of ongoingPatterns) {
+                const match = period.match(pattern);
+                if (match) {
+                    startDate = new Date(
+                        parseInt(match[1]),
+                        parseInt(match[2]) - 1,
+                        parseInt(match[3])
+                    );
+                    endDate = new Date(); // 현재
+                    console.log('    ✅ 진행중 기간 파싱 성공');
+                    break;
+                }
+            }
+        }
+
+        if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            console.error('    ❌ 날짜 파싱 실패');
+            return { startDate: null, endDate: null, totalDays: 0 };
+        }
+
+        const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        
+        return { startDate, endDate, totalDays };
     }
 
     // 🎯 완전히 개선된 휴직 여부 판단
@@ -634,8 +674,8 @@ class CareerCalculator {
                 <h4>📊 파싱 결과 요약</h4>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
                     <div>✅ 일반 근무: <strong>${summary.schoolCount}개</strong></div>
-                    <div>🟠 휴직: <strong>${summary.leaveCount}개</strong></div>
-                    <div>⏭️ 제외된 항목: <strong>${summary.skippedCount}개</strong></div>
+                    <div>🟡 휴직: <strong>${summary.leaveCount}개</strong></div>
+                    <div>⭐️ 제외된 항목: <strong>${summary.skippedCount}개</strong></div>
                     <div>❌ 오류: <strong>${summary.errorCount}개</strong></div>
                 </div>
             </div>
@@ -663,7 +703,7 @@ class CareerCalculator {
         // 휴직
         if (leaves.length > 0) {
             html += '<div class="parse-section parse-section--leaves">';
-            html += '<h4>🟠 휴직 정보</h4>';
+            html += '<h4>🟡 휴직 정보</h4>';
             html += '<ul class="parse-list">';
             leaves.forEach(leave => {
                 const effect = leave.isOneYearOrMore ? '학교만기 제외' : '학교만기 포함';
@@ -685,13 +725,13 @@ class CareerCalculator {
         // 제외된 항목
         if (skipped.length > 0) {
             html += '<div class="parse-section parse-section--skipped">';
-            html += '<h4>⏭️ 제외된 항목</h4>';
+            html += '<h4>⭐️ 제외된 항목</h4>';
             html += '<ul class="parse-list">';
             skipped.forEach(skip => {
                 html += `
                     <li class="parse-item">
                         <span style="color: #dc2626;">[${skip.reason}]</span> ${skip.appointmentType}
-                        <div class="parse-meta">${skip.period} (${skip.days}일)</div>
+                        <div class="parse-meta">라인 ${skip.lineNumber}: ${skip.period || skip.line}</div>
                     </li>
                 `;
             });
@@ -728,7 +768,7 @@ class CareerCalculator {
             summaryDiv.innerHTML = `
                 <div style="background: #d1fae5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                     <div>✅ 일반 근무: <strong>${schools.length}개</strong> 등록</div>
-                    <div>🟠 휴직: <strong>${leaves.length}개</strong> 등록</div>
+                    <div>🟡 휴직: <strong>${leaves.length}개</strong> 등록</div>
                     <div>📊 총 데이터: <strong>${this.schools.length + this.leaves.length}개</strong></div>
                 </div>
                 <p>만기 계산 결과를 확인하세요.</p>
@@ -801,7 +841,7 @@ class CareerCalculator {
             html += `
                 <div class="data-item data-item--leave${oneYearClass}">
                     <div class="data-info">
-                        <h5>🟠 ${leaveType.label}</h5>
+                        <h5>🟡 ${leaveType.label}</h5>
                         <div class="data-meta">${leave.appointmentType} | ${effect}</div>
                         <div class="data-period">${this.formatDate(leave.startDate)} ~ ${this.formatDate(leave.endDate)} (${this.formatDuration(leave.totalDays)})</div>
                     </div>
