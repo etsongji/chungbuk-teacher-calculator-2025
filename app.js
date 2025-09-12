@@ -918,7 +918,14 @@ class CareerCalculator {
         const regionalEffectiveDays = regionalTotalDays - regionalExcludedLeaveDays;
         const regionalTermDays = regionData.regionalTerm * 365;
         const regionalRemainingDays = Math.max(0, regionalTermDays - regionalEffectiveDays);
+        
+        // 지역 만기일도 학년도 기준으로 2월 28일로 조정
         const regionalExpiryDate = new Date(today.getTime() + regionalRemainingDays * 24 * 60 * 60 * 1000);
+        // 계산된 연도의 2월 28일로 설정
+        const regionalTargetYear = regionalExpiryDate.getFullYear();
+        regionalExpiryDate.setFullYear(regionalTargetYear);
+        regionalExpiryDate.setMonth(1); // 2월 (0-based)
+        regionalExpiryDate.setDate(28);
 
         console.log('- 지역 유효 근무일수:', regionalEffectiveDays);
         console.log('- 지역 만기일:', this.formatDate(regionalExpiryDate));
