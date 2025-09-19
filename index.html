@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>충주교육청 교사만기계산기</title>
+    <title>충북교육청 교사만기계산기</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -417,6 +417,152 @@
             transform: rotate(180deg);
         }
 
+        .input-method-selector {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .input-method-selector h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .method-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .method-btn {
+            flex: 1;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .method-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .method-btn.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .method-btn i {
+            font-size: 2rem;
+            color: #667eea;
+        }
+
+        .method-btn.active i {
+            color: white;
+        }
+
+        .method-btn span {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .method-btn small {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .input-mode-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .simple-input-guide {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+
+        .simple-input-guide h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .simple-input-guide p {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        .simple-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .date-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Noto Sans KR', sans-serif;
+            transition: border-color 0.3s ease;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .method-buttons {
+                flex-direction: column;
+            }
+            
+            .simple-form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .method-btn {
+                padding: 15px;
+            }
+            
+            .method-btn i {
+                font-size: 1.5rem;
+            }
+        }
+
         @media (max-width: 1200px) {
             .container {
                 max-width: 95%;
@@ -485,62 +631,109 @@
             <div class="input-section">
                 <h2><i class="fas fa-keyboard"></i> 데이터 입력</h2>
                 
-                <div class="data-format">
-                    <h4 class="toggle-header" onclick="toggleManual()">
-                        <i class="fas fa-download"></i> 나이스 데이터 추출 방법
-                        <i id="toggle-icon" class="fas fa-chevron-down toggle-icon"></i>
-                    </h4>
-                    <div id="manual-steps" class="manual-steps" style="display: none;">
-                        <div class="step">
-                            <span class="step-number">1</span>
-                            <strong>[나이스]-[인사]-[인사기록]-[기본사항]</strong> 접속
+                <!-- 입력 방식 선택 -->
+                <div class="input-method-selector">
+                    <h3><i class="fas fa-cog"></i> 입력 방식 선택</h3>
+                    <div class="method-buttons">
+                        <button id="simpleMethodBtn" class="method-btn active" onclick="selectInputMethod('simple')">
+                            <i class="fas fa-edit"></i>
+                            <span>간단 입력</span>
+                            <small>발령날짜만 입력</small>
+                        </button>
+                        <button id="detailMethodBtn" class="method-btn" onclick="selectInputMethod('detail')">
+                            <i class="fas fa-table"></i>
+                            <span>상세 입력</span>
+                            <small>나이스 데이터 활용</small>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 간단 입력 모드 -->
+                <div id="simpleInputSection" class="input-mode-section">
+                    <div class="simple-input-guide">
+                        <h4><i class="fas fa-info-circle"></i> 간단 입력 방법</h4>
+                        <p>현임교와 전임교 발령날짜만 입력하면 자동으로 만기를 계산합니다.</p>
+                        <p><strong>주의:</strong> 휴직기간은 고려되지 않으며, 연속 재직으로 간주됩니다.</p>
+                    </div>
+                    
+                    <div class="simple-form-grid">
+                        <div class="form-group">
+                            <label for="currentSchoolDate">현임교 발령날짜</label>
+                            <input type="date" id="currentSchoolDate" class="date-input" />
+                            <small>현재 근무 중인 학교의 첫 발령날짜</small>
                         </div>
-                        <div class="step">
-                            <span class="step-number">2</span>
-                            우측 상단 <strong>[출력]</strong> 클릭
-                        </div>
-                        <div class="step">
-                            <span class="step-number">3</span>
-                            <strong>[임용발령(전체)]</strong> 체크
-                        </div>
-                        <div class="step">
-                            <span class="step-number">4</span>
-                            <strong>[출력]</strong> 클릭
-                        </div>
-                        <div class="step">
-                            <span class="step-number">5</span>
-                            저장 버튼 클릭, <strong>xls 파일로 저장</strong>
-                        </div>
-                        <div class="step">
-                            <span class="step-number">6</span>
-                            Excel에서 <strong>충주교육청 발령 기간만 드래그하여 복사</strong>
-                        </div>
-                        <div class="step">
-                            <span class="step-number">7</span>
-                            아래 <strong>데이터 입력창에 붙여넣기</strong>
+                        
+                        <div class="form-group">
+                            <label for="firstSchoolDate">최초 발령날짜</label>
+                            <input type="date" id="firstSchoolDate" class="date-input" />
+                            <small>교사로서 최초 발령받은 날짜</small>
                         </div>
                     </div>
                     
-                    <h4 style="margin-top: 20px;">입력 형식</h4>
-                    <p>각 줄마다 다음 순서로 입력하세요:</p>
-                    <p><code>기간 임용구분 직급(직위) 부서 발령기관</code></p>
-                    <br>
-                    <p><strong>예시:</strong></p>
-                    <p><code>2020.03.01 ~ 2023.02.28	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청</code></p>
+                    <button class="calculate-btn" onclick="calculateSimpleExpiration()">
+                        <i class="fas fa-calculate"></i> 간단 계산하기
+                    </button>
                 </div>
 
-                <div class="form-group">
-                    <label for="dataInput">근무이력 데이터</label>
-                    <textarea 
-                        id="dataInput" 
-                        class="data-input" 
-                        placeholder="엑셀에서 복사한 데이터를 그대로 붙여넣으세요...&#10;&#10;예시:&#10;2020.03.01 ~ 2023.02.28	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청&#10;2023.03.01 ~ 2024.02.28	담임교사	교사	충청북도교육청 청주중학교	충청북도교육청&#10;2024.03.01 ~	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청"
-                    ></textarea>
-                </div>
+                <!-- 상세 입력 모드 -->
+                <div id="detailInputSection" class="input-mode-section" style="display: none;">
+                    <div class="data-format">
+                        <h4 class="toggle-header" onclick="toggleManual()">
+                            <i class="fas fa-download"></i> 나이스 데이터 추출 방법
+                            <i id="toggle-icon" class="fas fa-chevron-down toggle-icon"></i>
+                        </h4>
+                        <div id="manual-steps" class="manual-steps" style="display: none;">
+                            <div class="step">
+                                <span class="step-number">1</span>
+                                <strong>[나이스]-[인사]-[인사기록]-[기본사항]</strong> 접속
+                            </div>
+                            <div class="step">
+                                <span class="step-number">2</span>
+                                우측 상단 <strong>[출력]</strong> 클릭
+                            </div>
+                            <div class="step">
+                                <span class="step-number">3</span>
+                                <strong>[임용발령(전체)]</strong> 체크
+                            </div>
+                            <div class="step">
+                                <span class="step-number">4</span>
+                                <strong>[출력]</strong> 클릭
+                            </div>
+                            <div class="step">
+                                <span class="step-number">5</span>
+                                저장 버튼 클릭, <strong>xls 파일로 저장</strong>
+                            </div>
+                            <div class="step">
+                                <span class="step-number">6</span>
+                                Excel에서 <strong>충주교육청 발령 기간만 드래그하여 복사</strong>
+                            </div>
+                            <div class="step">
+                                <span class="step-number">7</span>
+                                아래 <strong>데이터 입력창에 붙여넣기</strong>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin-top: 20px;">입력 형식</h4>
+                        <p>각 줄마다 다음 순서로 입력하세요:</p>
+                        <p><code>기간 임용구분 직급(직위) 부서 발령기관</code></p>
+                        <br>
+                        <p><strong>예시:</strong></p>
+                        <p><code>2020.03.01 ~ 2023.02.28	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청</code></p>
+                    </div>
 
-                <button class="calculate-btn" onclick="calculateExpiration()">
-                    <i class="fas fa-calculate"></i> 만기 계산하기
-                </button>
+                    <div class="form-group">
+                        <label for="dataInput">근무이력 데이터</label>
+                        <textarea 
+                            id="dataInput" 
+                            class="data-input" 
+                            placeholder="엑셀에서 복사한 데이터를 그대로 붙여넣으세요...&#10;&#10;예시:&#10;2020.03.01 ~ 2023.02.28	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청&#10;2023.03.01 ~ 2024.02.28	담임교사	교사	충청북도교육청 청주중학교	충청북도교육청&#10;2024.03.01 ~	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청"
+                        ></textarea>
+                    </div>
+
+                    <button class="calculate-btn" onclick="calculateExpiration()">
+                        <i class="fas fa-calculate"></i> 상세 계산하기
+                    </button>
+                </div>
             </div>
 
             <div class="result-section">
@@ -563,6 +756,127 @@
         let currentYearlyStatus = [];
         let currentWorkHistory = [];
         let currentConsolidatedHistory = [];
+
+        // 입력 방식 선택 함수
+        function selectInputMethod(method) {
+            const simpleBtn = document.getElementById('simpleMethodBtn');
+            const detailBtn = document.getElementById('detailMethodBtn');
+            const simpleSection = document.getElementById('simpleInputSection');
+            const detailSection = document.getElementById('detailInputSection');
+            
+            if (method === 'simple') {
+                simpleBtn.classList.add('active');
+                detailBtn.classList.remove('active');
+                simpleSection.style.display = 'block';
+                detailSection.style.display = 'none';
+            } else {
+                detailBtn.classList.add('active');
+                simpleBtn.classList.remove('active');
+                detailSection.style.display = 'block';
+                simpleSection.style.display = 'none';
+            }
+        }
+
+        // 간단 만기 계산 함수
+        function calculateSimpleExpiration() {
+            const currentSchoolDate = document.getElementById('currentSchoolDate').value;
+            const firstSchoolDate = document.getElementById('firstSchoolDate').value;
+            const resultsDiv = document.getElementById('results');
+            
+            if (!currentSchoolDate || !firstSchoolDate) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        현임교 발령날짜와 최초 발령날짜를 모두 입력해주세요.
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const currentDate = new Date(currentSchoolDate);
+                const firstDate = new Date(firstSchoolDate);
+                
+                if (currentDate < firstDate) {
+                    throw new Error('현임교 발령날짜가 최초 발령날짜보다 빠를 수 없습니다.');
+                }
+                
+                // 현임교 재직기간 계산 (현재까지)
+                const now = new Date();
+                const currentSchoolTenure = calculateTenure(currentDate, now);
+                
+                // 전체 재직기간 계산
+                const totalTenure = calculateTenure(firstDate, now);
+                
+                // 현임교 5년 만기일 계산
+                const currentSchoolExpiration = new Date(currentDate);
+                currentSchoolExpiration.setFullYear(currentDate.getFullYear() + 5);
+                currentSchoolExpiration.setMonth(1, 28); // 2월 28일
+                
+                // 지역 만기 계산 (현임교 만기일 + 전임교 재직기간)
+                const priorSchoolTenure = totalTenure - currentSchoolTenure;
+                const regionalExpiration = new Date(currentSchoolExpiration);
+                regionalExpiration.setFullYear(regionalExpiration.getFullYear() + priorSchoolTenure);
+                
+                // 결과 표시
+                displaySimpleResults({
+                    currentSchoolDate: currentDate,
+                    firstSchoolDate: firstDate,
+                    currentSchoolTenure,
+                    totalTenure,
+                    currentSchoolExpiration,
+                    regionalExpiration
+                });
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        오류가 발생했습니다: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 간단 계산 결과 표시 함수
+        function displaySimpleResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = `
+                <div class="result-card current-school">
+                    <h3><i class="fas fa-school"></i> 현임교 만기</h3>
+                    <div class="result-value">${data.currentSchoolExpiration.getFullYear()}년 2월 28일</div>
+                    <p style="margin-top: 10px; color: #6c757d;">
+                        현임교 재직기간: ${data.currentSchoolTenure}년
+                    </p>
+                </div>
+
+                <div class="result-card regional">
+                    <h3><i class="fas fa-map-marker-alt"></i> 지역 만기</h3>
+                    <div class="result-value">${data.regionalExpiration.getFullYear()}년 2월 28일</div>
+                    <p style="margin-top: 10px; color: #6c757d;">
+                        전체 재직기간: ${data.totalTenure}년
+                    </p>
+                </div>
+
+                <div class="tenure-details">
+                    <h4><i class="fas fa-list"></i> 재직기간 상세</h4>
+                    <div class="tenure-item">
+                        <span>최초 발령일</span>
+                        <span>${data.firstSchoolDate.getFullYear()}.${(data.firstSchoolDate.getMonth() + 1).toString().padStart(2, '0')}.${data.firstSchoolDate.getDate().toString().padStart(2, '0')}</span>
+                    </div>
+                    <div class="tenure-item">
+                        <span>현임교 발령일</span>
+                        <span>${data.currentSchoolDate.getFullYear()}.${(data.currentSchoolDate.getMonth() + 1).toString().padStart(2, '0')}.${data.currentSchoolDate.getDate().toString().padStart(2, '0')}</span>
+                    </div>
+                </div>
+
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    간단 계산이 완료되었습니다! 휴직기간은 고려되지 않았습니다.
+                </div>
+            `;
+        }
 
         // 나이스 매뉴얼 토글 함수
         function toggleManual() {
