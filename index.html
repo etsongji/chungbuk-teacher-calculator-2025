@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>충북교육청 교사만기계산기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 40px;
+        }
+
+        @media (min-width: 1400px) {
+            .main-content {
+                grid-template-columns: 1fr 1.2fr;
+                gap: 50px;
+            }
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .input-section h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .data-input {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .data-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .data-format {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .data-format h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .data-format code {
+            background: rgba(25, 118, 210, 0.1);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .result-section {
+            background: #fff;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+        }
+
+        .result-section h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-card.current-school {
+            border-left-color: #28a745;
+        }
+
+        .result-card.regional {
+            border-left-color: #dc3545;
+        }
+
+        .result-card h3 {
+            color: #495057;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .result-card.current-school .result-value {
+            color: #28a745;
+        }
+
+        .result-card.regional .result-value {
+            color: #dc3545;
+        }
+
+        .tenure-details {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .tenure-details h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .tenure-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .tenure-item:last-child {
+            border-bottom: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 5px solid #dc3545;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 5px solid #28a745;
+        }
+
+        .yearly-analysis {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+        }
+
+        .yearly-analysis h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .yearly-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .yearly-table th,
+        .yearly-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .yearly-table th {
+            background: #f1f3f4;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .yearly-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-badge.work {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.leave {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .status-badge.clickable:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .status-badge.work.clickable:hover {
+            background: #c3e6cb;
+        }
+
+        .status-badge.leave.clickable:hover {
+            background: #f1b0b7;
+        }
+
+        .manual-steps {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step strong {
+            color: #0056b3;
+        }
+
+        .manual-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 10px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #1565c0;
+        }
+
+        .manual-info i {
+            color: #1976d2;
+            font-size: 1rem;
+        }
+
+        .toggle-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            margin: -10px -15px 15px -15px;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white !important;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .toggle-header:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+            transform: translateY(-1px);
+            color: white !important;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+            font-size: 1.1rem;
+            color: white;
+            opacity: 0.9;
+        }
+
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 95%;
+                margin: 10px auto;
+            }
+            
+            .main-content {
+                gap: 30px;
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .yearly-table {
+                font-size: 0.8rem;
+            }
+            
+            .yearly-table th,
+            .yearly-table td {
+                padding: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 5px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calculator"></i> 충주교육청 교사만기계산기</h1>
+            <p>교사 동일교 만기(5년)와 지역 만기(10년) 자동 계산</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2><i class="fas fa-keyboard"></i> 데이터 입력</h2>
+                
+                <div class="data-format">
+                    <h4 class="toggle-header" onclick="toggleManual()">
+                        <i class="fas fa-download"></i> 나이스 데이터 추출 방법
+                        <i id="toggle-icon" class="fas fa-chevron-down toggle-icon"></i>
+                    </h4>
+                    <div id="manual-steps" class="manual-steps" style="display: none;">
+                        <div class="step">
+                            <span class="step-number">1</span>
+                            <strong>[나이스]-[인사]-[인사기록]-[기본사항]</strong> 접속
+                        </div>
+                        <div class="step">
+                            <span class="step-number">2</span>
+                            우측 상단 <strong>[출력]</strong> 클릭
+                        </div>
+                        <div class="step">
+                            <span class="step-number">3</span>
+                            <strong>[임용발령(전체)]</strong> 체크
+                        </div>
+                        <div class="step">
+                            <span class="step-number">4</span>
+                            <strong>[출력]</strong> 클릭
+                        </div>
+                        <div class="step">
+                            <span class="step-number">5</span>
+                            저장 버튼 클릭, <strong>xls 파일로 저장</strong>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">6</span>
+                            Excel에서 <strong>충주교육청 발령 기간만 드래그하여 복사</strong>
+                        </div>
+                        <div class="step">
+                            <span class="step-number">7</span>
+                            아래 <strong>데이터 입력창에 붙여넣기</strong>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-top: 20px;">입력 형식</h4>
+                    <p>각 줄마다 다음 순서로 입력하세요:</p>
+                    <p><code>기간 임용구분 직급(직위) 부서 발령기관</code></p>
+                    <br>
+                    <p><strong>예시:</strong></p>
+                    <p><code>2020.03.01 ~ 2023.02.28	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청</code></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="dataInput">근무이력 데이터</label>
+                    <textarea 
+                        id="dataInput" 
+                        class="data-input" 
+                        placeholder="엑셀에서 복사한 데이터를 그대로 붙여넣으세요...&#10;&#10;예시:&#10;2020.03.01 ~ 2023.02.28	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청&#10;2023.03.01 ~ 2024.02.28	담임교사	교사	충청북도교육청 청주중학교	충청북도교육청&#10;2024.03.01 ~	담임교사	교사	충청북도교육청 충주고등학교	충청북도교육청"
+                    ></textarea>
+                </div>
+
+                <button class="calculate-btn" onclick="calculateExpiration()">
+                    <i class="fas fa-calculate"></i> 만기 계산하기
+                </button>
+            </div>
+
+            <div class="result-section">
+                <h2><i class="fas fa-chart-line"></i> 계산 결과</h2>
+                
+                <div id="results">
+                    <div class="result-card">
+                        <p style="text-align: center; color: #6c757d; padding: 40px 0;">
+                            <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            데이터를 입력하고 계산 버튼을 눌러주세요.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentYearlyStatus = [];
+        let currentWorkHistory = [];
+        let currentConsolidatedHistory = [];
+
+        // 나이스 매뉴얼 토글 함수
+        function toggleManual() {
+            const manualSteps = document.getElementById('manual-steps');
+            const toggleIcon = document.getElementById('toggle-icon');
+            
+            if (manualSteps.style.display === 'none') {
+                manualSteps.style.display = 'block';
+                toggleIcon.classList.add('rotated');
+            } else {
+                manualSteps.style.display = 'none';
+                toggleIcon.classList.remove('rotated');
+            }
+        }
+
+        // 날짜 파싱 함수
+        function parseDate(dateStr) {
+            // "2020.03.01" 형태를 Date 객체로 변환
+            const parts = dateStr.split('.');
+            return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        }
+
+        // 기간 파싱 함수
+        function parsePeriod(periodStr) {
+            const [startStr, endStr] = periodStr.split('~');
+            const startDate = parseDate(startStr.trim());
+            
+            let endDate;
+            if (!endStr || endStr.trim() === '현재' || endStr.trim() === '') {
+                endDate = new Date();
+            } else {
+                endDate = parseDate(endStr.trim());
+            }
+            
+            return { start: startDate, end: endDate };
+        }
+
+        // 학교명 추출 함수
+        function extractSchoolName(department) {
+            // "충청북도교육청 충주고등학교" 형식에서 학교명만 추출
+            const schoolPattern = /(.*?)(고등학교|중학교|초등학교|유치원)/;
+            
+            // 교육청 이름 제거 후 학교명 추출
+            const cleanDept = department.replace(/.*교육청\s+/, '').trim();
+            const match = cleanDept.match(schoolPattern);
+            
+            if (match) {
+                return match[1] + match[2];
+            }
+            
+            // 패턴이 맞지 않으면 전체 정리된 부서명 반환
+            return cleanDept;
+        }
+
+        // 재직기간 계산 함수 (3.1 ~ 2.28 기준)
+        function calculateTenure(startDate, endDate) {
+            console.log('calculateTenure called:', {
+                start: startDate,
+                end: endDate,
+                startYear: startDate.getFullYear(),
+                startMonth: startDate.getMonth(),
+                endYear: endDate.getFullYear(),
+                endMonth: endDate.getMonth()
+            });
+            
+            // 학년도 계산: 2024.03.01~2025.02.28 = 1년, 2024.03.01~2026.02.28 = 2년
+            let startSchoolYear = startDate.getFullYear();
+            if (startDate.getMonth() < 2) { // 1월, 2월
+                startSchoolYear--;
+            }
+            
+            let endSchoolYear = endDate.getFullYear();
+            if (endDate.getMonth() < 2) { // 1월, 2월
+                endSchoolYear--;
+            }
+            
+            const years = endSchoolYear - startSchoolYear + 1;
+            
+            console.log('School years: start=', startSchoolYear, 'end=', endSchoolYear, 'total=', years);
+            
+            return Math.max(0, years);
+        }
+
+        // 휴직 여부 확인 함수
+        function isLeave(appointment) {
+            // 휴직복직은 실제 휴직이 아님 (당일 복직)
+            if (appointment.includes('휴직복직')) return false;
+            return appointment.includes('휴직') || appointment.includes('육아휴직');
+        }
+
+        // 유효한 근무기간인지 확인 (휴직복직만 제외)
+        function isValidWorkPeriod(appointment, startDate, endDate) {
+            // 휴직복직은 실제 근무기간이 아님 (당일 복직)
+            if (appointment.includes('휴직복직')) return false;
+            return true;
+        }
+
+        // 휴직기간이 1년 이상인지 확인 함수
+        function isLongTermLeave(startDate, endDate) {
+            const diffTime = Math.abs(endDate - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays >= 365;
+        }
+
+        // 충주지역 학교인지 확인 함수
+        function isChungjuSchool(schoolName) {
+            return schoolName.includes('충주');
+        }
+
+        // 년도별 재직/휴직 상태 분석 함수
+        function analyzeYearlyStatus(workHistory) {
+            console.log('Starting yearly status analysis...');
+            
+            // 모든 기간의 시작년도와 끝년도 찾기
+            let minYear = Math.min(...workHistory.map(record => {
+                let year = record.period.start.getFullYear();
+                if (record.period.start.getMonth() < 2) year--; // 1-2월은 이전 학년도
+                return year;
+            }));
+            
+            let maxYear = Math.max(...workHistory.map(record => {
+                let year = record.period.end.getFullYear();
+                if (record.period.end.getMonth() < 2) year--; // 1-2월은 이전 학년도
+                return year;
+            }));
+            
+            const yearlyStatus = [];
+            
+            for (let year = minYear; year <= maxYear; year++) {
+                const schoolYearStart = new Date(year, 2, 1); // 3월 1일
+                const schoolYearEnd = new Date(year + 1, 1, 28); // 다음해 2월 28일
+                
+                console.log(`Analyzing school year ${year}-${year+1}`);
+                
+                // 해당 학년도와 겹치는 기간들 찾기
+                const overlappingRecords = workHistory.filter(record => {
+                    return record.period.start < schoolYearEnd && record.period.end > schoolYearStart;
+                });
+                
+                if (overlappingRecords.length === 0) continue;
+                
+                // 학교별로 그룹화
+                const schoolGroups = {};
+                for (const record of overlappingRecords) {
+                    if (!schoolGroups[record.schoolName]) {
+                        schoolGroups[record.schoolName] = [];
+                    }
+                    schoolGroups[record.schoolName].push(record);
+                }
+                
+                // 각 학교별 상태 결정
+                for (const [schoolName, records] of Object.entries(schoolGroups)) {
+                    let status = 'work'; // 기본값은 재직
+                    
+                    // 학년도 전체 일수 (365일)
+                    const schoolYearDays = 365;
+                    
+                    // 휴직기간들이 학년도를 얼마나 커버하는지 계산
+                    const leaveRecords = records.filter(r => r.isLeave);
+                    let totalLeaveDays = 0;
+                    
+                    console.log(`\n${schoolName} ${year}-${year+1} analysis:`);
+                    console.log(`School year: ${schoolYearStart.toISOString().slice(0,10)} to ${schoolYearEnd.toISOString().slice(0,10)}`);
+                    
+                    for (const leaveRecord of leaveRecords) {
+                        // 해당 학년도와 겹치는 휴직기간만 계산
+                        const leaveStart = new Date(Math.max(leaveRecord.period.start, schoolYearStart));
+                        const leaveEnd = new Date(Math.min(leaveRecord.period.end, schoolYearEnd));
+                        
+                        if (leaveStart < leaveEnd) {
+                            const leaveDuration = leaveEnd - leaveStart;
+                            const days = Math.ceil(leaveDuration / (1000 * 60 * 60 * 24));
+                            totalLeaveDays += days;
+                            console.log(`  Leave: ${leaveRecord.appointment}`);
+                            console.log(`    Period: ${leaveRecord.period.start.toISOString().slice(0,10)} to ${leaveRecord.period.end.toISOString().slice(0,10)}`);
+                            console.log(`    Overlap: ${leaveStart.toISOString().slice(0,10)} to ${leaveEnd.toISOString().slice(0,10)} = ${days} days`);
+                        }
+                    }
+                    
+                    // 휴직 커버리지 계산 (90% 이상이면 휴직년도로 처리)
+                    const leaveCoverage = totalLeaveDays / schoolYearDays;
+                    console.log(`  Total leave coverage: ${totalLeaveDays}/${schoolYearDays} = ${(leaveCoverage * 100).toFixed(1)}%`);
+                    
+                    if (leaveCoverage >= 0.9) { // 90% 이상 휴직이면 휴직년도
+                        status = 'leave';
+                        console.log(`  Result: LEAVE (coverage >= 90%)`);
+                    } else {
+                        console.log(`  Result: WORK (coverage < 90%)`);
+                    }
+                    
+                    yearlyStatus.push({
+                        year: year,
+                        schoolYear: `${year}-${year+1}`,
+                        schoolName: schoolName,
+                        status: status,
+                        records: records,
+                        totalLeaveDays: totalLeaveDays,
+                        leaveCoverage: Math.round(leaveCoverage * 100)
+                    });
+                }
+            }
+            
+            console.log('Yearly status analysis complete:', yearlyStatus);
+            return yearlyStatus;
+        }
+
+        // 년도별 분석 결과로 재직기간 계산
+        function calculateTenureFromYearlyStatus(yearlyStatus, schoolName) {
+            const schoolYears = yearlyStatus.filter(y => y.schoolName === schoolName && y.status === 'work');
+            console.log(`${schoolName} work years:`, schoolYears.length);
+            return schoolYears.length;
+        }
+
+        // 년도별 상태 토글 함수
+        function toggleYearlyStatus(index) {
+            if (index >= 0 && index < currentYearlyStatus.length) {
+                // 상태 토글
+                currentYearlyStatus[index].status = currentYearlyStatus[index].status === 'work' ? 'leave' : 'work';
+                console.log(`Toggled ${currentYearlyStatus[index].schoolYear} ${currentYearlyStatus[index].schoolName} to ${currentYearlyStatus[index].status}`);
+                
+                // 재계산
+                recalculateWithUpdatedStatus();
+            }
+        }
+
+        // 업데이트된 상태로 재계산
+        function recalculateWithUpdatedStatus() {
+            const consolidatedHistory = currentConsolidatedHistory;
+            const yearlyStatus = currentYearlyStatus;
+            
+            // 현임교 찾기
+            const currentSchool = consolidatedHistory[consolidatedHistory.length - 1].schoolName;
+            
+            // 현임교 재직기간 계산 (업데이트된 년도별 상태 사용)
+            const currentSchoolTenure = calculateTenureFromYearlyStatus(yearlyStatus, currentSchool);
+            console.log('Updated current school tenure:', currentSchoolTenure);
+            
+            // 현임교 시작일 찾기
+            const currentSchoolRecords = yearlyStatus.filter(y => y.schoolName === currentSchool).sort((a, b) => a.year - b.year);
+            const currentSchoolStart = currentSchoolRecords.length > 0 
+                ? new Date(currentSchoolRecords[0].year, 2, 1)
+                : consolidatedHistory[consolidatedHistory.length - 1].period.start;
+
+            // 전체 재직기간 계산 (업데이트된 년도별 상태 사용)
+            const allSchools = [...new Set(yearlyStatus.map(y => y.schoolName))];
+            let totalTenure = 0;
+            for (const school of allSchools) {
+                const schoolTenure = calculateTenureFromYearlyStatus(yearlyStatus, school);
+                totalTenure += schoolTenure;
+                console.log(`Updated ${school} tenure:`, schoolTenure);
+            }
+            console.log('Updated total tenure:', totalTenure);
+
+            // 만기일 계산
+            const currentSchoolExpiration = new Date(currentSchoolStart);
+            currentSchoolExpiration.setFullYear(currentSchoolStart.getFullYear() + 5);
+            currentSchoolExpiration.setMonth(1, 28);
+
+            // 지역 만기 계산
+            const priorSchoolTenure = totalTenure - currentSchoolTenure;
+            const regionalExpiration = new Date(currentSchoolExpiration);
+            regionalExpiration.setFullYear(regionalExpiration.getFullYear() + priorSchoolTenure);
+
+            // 결과 업데이트
+            displayResults({
+                currentSchool,
+                currentSchoolStart,
+                currentSchoolTenure,
+                currentSchoolExpiration,
+                totalTenure,
+                regionalExpiration,
+                workHistory: consolidatedHistory,
+                yearlyStatus: yearlyStatus
+            });
+        }
+
+        // 같은 학교 연속 근무기간 통합 함수
+        function consolidateWorkHistory(workHistory) {
+            if (workHistory.length === 0) return [];
+            
+            console.log('Before consolidation:', workHistory);
+            
+            // 날짜순 정렬
+            workHistory.sort((a, b) => a.period.start - b.period.start);
+            
+            const consolidated = [];
+            let currentGroup = [workHistory[0]];
+            
+            for (let i = 1; i < workHistory.length; i++) {
+                const current = workHistory[i];
+                const lastInGroup = currentGroup[currentGroup.length - 1];
+                
+                console.log('Comparing schools:', current.schoolName, 'vs', lastInGroup.schoolName);
+                
+                // 같은 학교이고 기간이 연속되거나 겹치는 경우
+                if (current.schoolName === lastInGroup.schoolName) {
+                    console.log('Same school, adding to group');
+                    currentGroup.push(current);
+                } else {
+                    // 다른 학교면 이전 그룹 완료하고 새 그룹 시작
+                    console.log('Different school, creating new group');
+                    const merged = mergeGroup(currentGroup);
+                    console.log('Merged group:', merged);
+                    consolidated.push(merged);
+                    currentGroup = [current];
+                }
+            }
+            
+            // 마지막 그룹 추가
+            const lastMerged = mergeGroup(currentGroup);
+            console.log('Last merged group:', lastMerged);
+            consolidated.push(lastMerged);
+            
+            console.log('Final consolidated:', consolidated);
+            return consolidated;
+        }
+
+        // 같은 학교 그룹 병합
+        function mergeGroup(group) {
+            console.log('Merging group:', group);
+            
+            if (group.length === 1) return group[0];
+            
+            // 시작일은 가장 빠른 것, 종료일은 가장 늦은 것
+            const start = new Date(Math.min(...group.map(g => g.period.start)));
+            const end = new Date(Math.max(...group.map(g => g.period.end)));
+            
+            console.log('Merged period:', start, 'to', end);
+            
+            // 일반 근무와 휴직을 구분
+            const normalWorkItem = group.find(g => !g.isLeave);
+            const leaveItems = group.filter(g => g.isLeave);
+            
+            console.log('Normal work items:', group.filter(g => !g.isLeave));
+            console.log('Leave items to store:', leaveItems);
+            
+            const result = {
+                period: { start, end },
+                appointment: normalWorkItem ? normalWorkItem.appointment : group[0].appointment,
+                position: group[0].position,
+                department: group[0].department,
+                schoolName: group[0].schoolName,
+                issuer: group[0].issuer,
+                isLeave: false, // 통합된 기간은 일반 근무로 처리
+                isChungju: group[0].isChungju,
+                leaveItems: leaveItems // 휴직 정보 별도 보관
+            };
+            
+            console.log('Result with leave items:', result.leaveItems?.length || 0, 'items');
+            
+            console.log('Merge result:', result);
+            return result;
+        }
+
+        // 지역 만기 계산 (현임교 만기일 + 전임교 재직기간)
+        function calculateRegionalExpiration(workHistory, currentSchoolExpiration, currentSchool) {
+            // 전임교 재직기간 계산 (현임교 제외)
+            let priorTenure = 0;
+            
+            for (const record of workHistory) {
+                if (record.schoolName !== currentSchool) {
+                    console.log('Processing prior school record:', record.schoolName);
+                    // 통합된 기간에서 휴직기간 차감
+                    let recordTenure = calculateTenure(record.period.start, record.period.end);
+                    console.log('Initial record tenure:', recordTenure);
+                    
+                    if (record.leaveItems && record.leaveItems.length > 0) {
+                        console.log('Found', record.leaveItems.length, 'leave items for', record.schoolName);
+                        
+                        // 모든 휴직기간을 합쳐서 재직기간으로 계산
+                        let totalLeaveYears = 0;
+                        for (const leaveItem of record.leaveItems) {
+                            const leaveYears = calculateTenure(leaveItem.period.start, leaveItem.period.end);
+                            totalLeaveYears += leaveYears;
+                            console.log('Leave item:', leaveItem.appointment, 'years:', leaveYears);
+                        }
+                        
+                        console.log('Total leave years to deduct:', totalLeaveYears);
+                        recordTenure = Math.max(0, recordTenure - totalLeaveYears);
+                        console.log('Final tenure after leave deduction:', recordTenure);
+                    } else {
+                        console.log('No leave items for', record.schoolName);
+                    }
+                    
+                    priorTenure += recordTenure;
+                    console.log('Updated prior tenure:', priorTenure);
+                }
+            }
+            
+            console.log('Prior school tenure:', priorTenure);
+            
+            // 현임교 만기일에서 전임교 재직기간만큼 더하기
+            const regionalExpiration = new Date(currentSchoolExpiration);
+            regionalExpiration.setFullYear(regionalExpiration.getFullYear() + priorTenure);
+            
+            return regionalExpiration;
+        }
+
+        // 메인 계산 함수
+        function calculateExpiration() {
+            const input = document.getElementById('dataInput').value.trim();
+            const resultsDiv = document.getElementById('results');
+            
+            if (!input) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        데이터를 입력해주세요.
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const lines = input.split('\n').filter(line => line.trim());
+                const workHistory = [];
+                
+                // 데이터 파싱 (엑셀 복사 데이터 처리)
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    
+                    // 탭과 여러 공백을 기준으로 분할하되, 빈 문자열 제거
+                    const parts = line.split(/\t+|\s{2,}/).filter(part => part.trim()).map(part => part.trim());
+                    if (parts.length < 5) continue;
+                    
+                    const period = parts[0];
+                    const appointment = parts[1];
+                    const position = parts[2];
+                    const department = parts[3];
+                    const issuer = parts[4];
+                    
+                    const { start, end } = parsePeriod(period);
+                    const schoolName = extractSchoolName(department);
+                    
+                    // 유효한 근무기간만 추가
+                    if (isValidWorkPeriod(appointment, start, end)) {
+                        const record = {
+                            period: { start, end },
+                            appointment,
+                            position,
+                            department,
+                            schoolName,
+                            issuer,
+                            isLeave: isLeave(appointment),
+                            isChungju: isChungjuSchool(schoolName)
+                        };
+                        console.log('Adding record:', record.schoolName, record.appointment, 'isLeave:', record.isLeave);
+                        workHistory.push(record);
+                    }
+                }
+
+                if (workHistory.length === 0) {
+                    throw new Error('유효한 데이터가 없습니다.');
+                }
+
+                console.log('Raw work history:', workHistory);
+                
+                // 년도별 재직/휴직 상태 분석
+                const yearlyStatus = analyzeYearlyStatus(workHistory);
+                
+                // 같은 학교 연속 근무기간 통합
+                const consolidatedHistory = consolidateWorkHistory(workHistory);
+                
+                // 전역 변수 업데이트
+                currentYearlyStatus = yearlyStatus;
+                currentWorkHistory = workHistory;
+                currentConsolidatedHistory = consolidatedHistory;
+                
+                console.log('Consolidated history:', consolidatedHistory);
+
+                // 첫 번째 학교 전입일 찾기
+                const firstSchoolEntry = consolidatedHistory[0].period.start;
+                const currentSchool = consolidatedHistory[consolidatedHistory.length - 1].schoolName;
+                
+                // 현임교 재직기간 계산 (년도별 분석 방식)
+                const currentSchoolTenure = calculateTenureFromYearlyStatus(yearlyStatus, currentSchool);
+                console.log('Current school tenure (yearly method):', currentSchoolTenure);
+                
+                // 현임교 시작일 찾기 (만기일 계산용)
+                const currentSchoolRecords = yearlyStatus.filter(y => y.schoolName === currentSchool).sort((a, b) => a.year - b.year);
+                const currentSchoolStart = currentSchoolRecords.length > 0 
+                    ? new Date(currentSchoolRecords[0].year, 2, 1) // 첫 해 3월 1일
+                    : consolidatedHistory[consolidatedHistory.length - 1].period.start;
+
+                // 전체 재직기간 계산 (년도별 분석 방식)
+                const allSchools = [...new Set(yearlyStatus.map(y => y.schoolName))];
+                let totalTenure = 0;
+                for (const school of allSchools) {
+                    const schoolTenure = calculateTenureFromYearlyStatus(yearlyStatus, school);
+                    totalTenure += schoolTenure;
+                    console.log(`${school} tenure:`, schoolTenure);
+                }
+                console.log('Total tenure (yearly method):', totalTenure);
+
+                // 만기일 계산
+                const currentSchoolExpiration = new Date(currentSchoolStart);
+                currentSchoolExpiration.setFullYear(currentSchoolStart.getFullYear() + 5);
+                currentSchoolExpiration.setMonth(1, 28); // 2월 28일
+
+                // 지역 만기: 현임교 만기일 + 전임교 재직기간 (년도별 분석 방식)
+                const priorSchoolTenure = totalTenure - currentSchoolTenure;
+                console.log('Prior school tenure:', priorSchoolTenure);
+                
+                const regionalExpiration = new Date(currentSchoolExpiration);
+                regionalExpiration.setFullYear(regionalExpiration.getFullYear() + priorSchoolTenure);
+
+                // 결과 표시
+                displayResults({
+                    currentSchool,
+                    currentSchoolStart,
+                    currentSchoolTenure,
+                    currentSchoolExpiration,
+                    totalTenure,
+                    regionalExpiration,
+                    workHistory: consolidatedHistory,
+                    yearlyStatus: yearlyStatus
+                });
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        오류가 발생했습니다: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 결과 표시 함수
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            // 재직기간 상세 (년도별 분석 기반)
+            const schoolTenureMap = {};
+            if (data.yearlyStatus) {
+                // 각 학교별 실제 재직년수 계산
+                const allSchools = [...new Set(data.yearlyStatus.map(y => y.schoolName))];
+                for (const school of allSchools) {
+                    const workYears = data.yearlyStatus.filter(y => y.schoolName === school && y.status === 'work').length;
+                    const totalYears = data.yearlyStatus.filter(y => y.schoolName === school).length;
+                    const leaveYears = totalYears - workYears;
+                    schoolTenureMap[school] = { workYears, totalYears, leaveYears };
+                }
+            }
+
+            const tenureDetailsHtml = data.workHistory.map(record => {
+                const schoolTenure = schoolTenureMap[record.schoolName];
+                const displayText = schoolTenure 
+                    ? `${schoolTenure.workYears}년${schoolTenure.leaveYears > 0 ? ` (전체 ${schoolTenure.totalYears}년 중 휴직 ${schoolTenure.leaveYears}년 제외)` : ''}`
+                    : `${calculateTenure(record.period.start, record.period.end)}년${record.isLeave ? ' (휴직)' : ''}`;
+                
+                return `
+                    <div class="tenure-item">
+                        <span>${record.schoolName} (${record.period.start.getFullYear()}.${(record.period.start.getMonth() + 1).toString().padStart(2, '0')}.${record.period.start.getDate().toString().padStart(2, '0')} ~ ${record.period.end.getFullYear()}.${(record.period.end.getMonth() + 1).toString().padStart(2, '0')}.${record.period.end.getDate().toString().padStart(2, '0')})</span>
+                        <span>${displayText}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // 년도별 분석 표 생성
+            const yearlyTableHtml = data.yearlyStatus ? data.yearlyStatus.map((item, index) => `
+                <tr>
+                    <td>${item.schoolYear}</td>
+                    <td>${item.schoolName}</td>
+                    <td>
+                        <span class="status-badge ${item.status} clickable" 
+                              onclick="toggleYearlyStatus(${index})" 
+                              title="클릭하여 상태 변경">
+                            ${item.status === 'work' ? '재직' : '휴직'}
+                        </span>
+                        ${item.totalLeaveDays > 0 ? `<br><small style="color: #999;">(휴직 ${item.totalLeaveDays}일)</small>` : ''}
+                    </td>
+                    <td style="font-size: 0.8rem; color: #666;">
+                        ${item.records.map(r => r.appointment).join(', ')}
+                    </td>
+                </tr>
+            `).join('') : '';
+
+            resultsDiv.innerHTML = `
+                <div class="result-card current-school">
+                    <h3><i class="fas fa-school"></i> 현임교 만기</h3>
+                    <div class="result-value">${data.currentSchoolExpiration.getFullYear()}년 2월 28일</div>
+                    <p style="margin-top: 10px; color: #6c757d;">
+                        ${data.currentSchool} 재직기간: ${data.currentSchoolTenure}년
+                    </p>
+                </div>
+
+                <div class="result-card regional">
+                    <h3><i class="fas fa-map-marker-alt"></i> 지역 만기</h3>
+                    <div class="result-value">${data.regionalExpiration.getFullYear()}년 2월 28일</div>
+                    <p style="margin-top: 10px; color: #6c757d;">
+                        전체 재직기간: ${data.totalTenure}년
+                    </p>
+                </div>
+
+                ${data.yearlyStatus ? `
+                <div class="yearly-analysis">
+                    <h4><i class="fas fa-calendar-alt"></i> 년도별 재직/휴직 분석</h4>
+                    <div class="manual-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>휴직, 재직 기간 계산이 잘못되었을 경우, 수동으로 휴직, 재직 변경 가능. 자동 계산</span>
+                    </div>
+                    <div class="table-container">
+                        <table class="yearly-table">
+                            <thead>
+                                <tr>
+                                    <th>학년도</th>
+                                    <th>학교</th>
+                                    <th>상태</th>
+                                    <th>상세</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${yearlyTableHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="tenure-details">
+                    <h4><i class="fas fa-list"></i> 재직기간 상세</h4>
+                    ${tenureDetailsHtml}
+                </div>
+
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    계산이 완료되었습니다! 3월 1일 ~ 2월 28일 기준으로 계산되었습니다.
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
